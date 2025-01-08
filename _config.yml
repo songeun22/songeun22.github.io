@@ -19,8 +19,8 @@ locale                   : "en-US"
 rtl                      : # true, false (default) # turns direction of the page into right to left for RTL languages
 title                    : "Blog For Myself"
 title_separator          : "-"
-subtitle                 : #
-name                     : "Song Eun, Kim"
+subtitle                 : # ""
+name                     : "Song Eun"
 description              : "Just keeping track of me"
 url                      : "https://songeun22.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
