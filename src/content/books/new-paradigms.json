@@ -1,0 +1,9 @@
+{
+  "title": "New Paradigms in Modern Statistics",
+  "subtitle": "Conformal prediction and martingale posteriors",
+  "description": "Starting from how far classical statistics assumptions can bend once a model is treated as a black box, and building toward conformal prediction and the martingale posterior.",
+  "order": 3,
+  "color": "#2d7d6f",
+  "status": "in-progress",
+  "updated": "2026-07-18"
+}

@@ -1,0 +1,15 @@
+---
+title: Debiased lasso
+description: Getting valid confidence intervals back out of a regularized estimator.
+order: 3
+---
+
+**TODO chapter**, working title, the exact framing of this one is still not fully decided.
+
+The lasso is great for point estimation in high dimensions, but the regularization that makes it work also biases the estimates in a way that breaks ordinary confidence intervals. The debiased, or desparsified, lasso is one answer to that: correct the bias back out and recover something close to asymptotically normal, so inference is possible again.
+
+Rough plan:
+
+- Why plain lasso coefficients don't come with valid confidence intervals.
+- The debiasing construction, and where the correction term actually comes from.
+- What guarantees survive, and under what conditions on the design matrix.
