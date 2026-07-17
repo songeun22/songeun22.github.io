@@ -5,7 +5,7 @@ import Reveal from '../components/Reveal.astro';
 import { site } from '../site.config';
 
 const entries = await getCollection('timeline');
-const timeline = entries.sort((a, b) => b.data.start - a.data.start);
+const timeline = entries.sort((a, b) => a.data.start - b.data.start);
 
 const kindLabel: Record<string, string> = {
   education: 'Education',
@@ -56,6 +56,22 @@ const kindLabel: Record<string, string> = {
         </dl>
       </aside>
     </Reveal>
+  </section>
+
+  <section class="pub-section">
+    <Reveal>
+      <h2>Publications</h2>
+    </Reveal>
+
+    <ol class="pub-list">
+      <li>
+        <Reveal>
+          <p class="pub-authors"><strong>Songeun Kim</strong>, Seungyoo Lee, Edwin Fong, Hyungi Lee, Juho Lee</p>
+          <p class="pub-title">From Drift to Coherence: Stabilizing Beliefs of LLMs</p>
+          <p class="pub-meta">ICML 2026 · <a href="https://arxiv.org/abs/2606.17832">arXiv</a></p>
+        </Reveal>
+      </li>
+    </ol>
   </section>
 
   <section class="tl-section">
@@ -145,6 +161,45 @@ const kindLabel: Record<string, string> = {
 
   dd a:hover {
     text-decoration: underline;
+  }
+
+  /* ---- Publications ---- */
+
+  .pub-section {
+    padding-bottom: var(--space-16);
+  }
+
+  .pub-section h2 {
+    font-size: var(--text-2xl);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pub-list {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-8) 0 0;
+    max-width: 760px;
+  }
+
+  .pub-list li + li {
+    margin-top: var(--space-6);
+  }
+
+  .pub-authors {
+    font-size: var(--text-sm);
+  }
+
+  .pub-title {
+    margin-top: var(--space-1);
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+  }
+
+  .pub-meta {
+    margin-top: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--text-faint);
   }
 
   /* ---- Timeline ---- */

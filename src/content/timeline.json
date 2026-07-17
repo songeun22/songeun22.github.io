@@ -1,20 +1,37 @@
 [
   {
-    "id": "snu-grad",
-    "period": "2024 — present",
-    "start": 2024,
-    "title": "Graduate Researcher",
-    "org": "Seoul National University",
-    "description": "Placeholder entry. Replace with your actual research focus, lab, and advisor.",
+    "id": "hdmt-park",
+    "period": "Dec 2024 — Jun 2025",
+    "start": 2024.92,
+    "title": "Research Intern",
+    "org": "High-Dimensional Multiple Testing Lab, SNU Statistics",
+    "description": "PI: Prof. Junyong Park",
     "kind": "research"
   },
   {
-    "id": "snu-undergrad",
-    "period": "2020 — 2024",
-    "start": 2020,
-    "title": "B.S.",
-    "org": "Seoul National University",
-    "description": "Placeholder entry. Replace with your degree and any highlights worth surfacing.",
-    "kind": "education"
+    "id": "siml-lee",
+    "period": "Jul 2025 — Jan 2026",
+    "start": 2025.5,
+    "title": "Research Intern",
+    "org": "Statistical Inference and Machine Learning Lab, KAIST AI",
+    "description": "PI: Prof. Juho Lee",
+    "kind": "research"
+  },
+  {
+    "id": "linqalpha-fde",
+    "period": "Feb 2026 — Jun 2026",
+    "start": 2026.08,
+    "title": "Forward Deployed Engineer",
+    "org": "LinqAlpha",
+    "kind": "work"
+  },
+  {
+    "id": "mllab-song",
+    "period": "Jun 2026 — present",
+    "start": 2026.42,
+    "title": "Research Intern",
+    "org": "MLLAB, SNU CSE",
+    "description": "PI: Prof. Hyunoh Song",
+    "kind": "research"
   }
 ]
