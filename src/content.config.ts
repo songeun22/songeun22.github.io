@@ -59,7 +59,7 @@ const timeline = defineCollection({
     id: z.string(),
     /** e.g. "2024" or "2022–2024". Displayed verbatim. */
     period: z.string(),
-    /** Sorts the timeline, oldest first. */
+    /** Sorts the timeline, newest first. */
     start: z.number(),
     title: z.string(),
     org: z.string(),

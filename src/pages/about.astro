@@ -5,7 +5,7 @@ import Reveal from '../components/Reveal.astro';
 import { site } from '../site.config';
 
 const entries = await getCollection('timeline');
-const timeline = entries.sort((a, b) => a.data.start - b.data.start);
+const timeline = entries.sort((a, b) => b.data.start - a.data.start);
 
 const kindLabel: Record<string, string> = {
   education: 'Education',
@@ -266,6 +266,11 @@ const kindLabel: Record<string, string> = {
 
   .marker[data-kind='education'] .dot {
     border-color: var(--accent);
+  }
+
+  .marker[data-kind='work'] .dot {
+    border-color: color-mix(in srgb, var(--accent) 55%, white);
+    background: color-mix(in srgb, var(--accent) 35%, white);
   }
 
   .body {
