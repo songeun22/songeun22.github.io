@@ -1,7 +1,7 @@
 {
   "title": "Hypothesis Testing",
   "subtitle": "What a p-value is actually claiming",
-  "description": "Building the logic of significance testing from the ground up — what the null hypothesis assumes, where the sampling distribution comes from, and why the answer is never the one people want it to be.",
+  "description": "Building the logic of significance testing from the ground up, what the null hypothesis assumes, where the sampling distribution comes from, and why the answer is never the one people want it to be.",
   "order": 1,
   "color": "#2f5ea8",
   "status": "in-progress",

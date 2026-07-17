@@ -1,7 +1,7 @@
 {
   "title": "Predictive Inference",
   "subtitle": "Guarantees that survive a black box",
-  "description": "Planned. Conformal prediction and friends — distribution-free coverage that holds without trusting the model underneath.",
+  "description": "Planned. Conformal prediction and friends, distribution-free coverage that holds without trusting the model underneath.",
   "order": 4,
   "status": "planned"
 }

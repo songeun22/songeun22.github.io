@@ -14,13 +14,13 @@ Almost every misuse is the same move: reading that conditional backwards.
 
 ## The reversal
 
-What people want is $P(H_0 \mid \text{data})$ — the probability the null is true given what they saw. What they have is $P(\text{data} \mid H_0)$. These are different quantities, and they are related by Bayes' rule, which requires a prior the test never asked for:
+What people want is $P(H_0 \mid \text{data})$, the probability the null is true given what they saw. What they have is $P(\text{data} \mid H_0)$. These are different quantities, and they are related by Bayes' rule, which requires a prior the test never asked for:
 
 $$
 P(H_0 \mid \text{data}) = \frac{P(\text{data} \mid H_0)\, P(H_0)}{P(\text{data})}
 $$
 
-Without $P(H_0)$, the flip is not available. A small p-value says *the data are surprising under the null*. Whether that makes the null unlikely depends on how plausible the alternative was to begin with — which is information you brought, not information the test produced.
+Without $P(H_0)$, the flip is not available. A small p-value says *the data are surprising under the null*. Whether that makes the null unlikely depends on how plausible the alternative was to begin with, which is information you brought, not information the test produced.
 
 ## Four things it does not mean
 
@@ -33,7 +33,7 @@ Without $P(H_0)$, the flip is not available. A small p-value says *the data are 
 
 ## The last one matters most
 
-That fourth row is the one that survives peer review. Because $\text{SE}$ shrinks with $\sqrt{n}$, **any** non-zero effect can be pushed below any threshold with enough data. The null is false by construction, so with unlimited $n$, significance is guaranteed. It tells you the effect is not exactly zero — something you already knew.
+That fourth row is the one that survives peer review. Because $\text{SE}$ shrinks with $\sqrt{n}$, **any** non-zero effect can be pushed below any threshold with enough data. The null is false by construction, so with unlimited $n$, significance is guaranteed. It tells you the effect is not exactly zero, something you already knew.
 
 A p-value with no effect size next to it is close to content-free. Report the interval.
 
@@ -41,4 +41,4 @@ A p-value with no effect size next to it is close to content-free. Report the in
 
 Narrowly: as a **pre-committed decision rule** with a known long-run error rate. Fix α, fix $n$, fix the test, run it once, accept that you will be wrong α of the time when the null holds. That contract is real and useful.
 
-It breaks the moment you peek, add subjects until it crosses, or test twenty things and report the one that landed. Not because the arithmetic changed — because α is a property of the *procedure*, and you changed the procedure.
+It breaks the moment you peek, add subjects until it crosses, or test twenty things and report the one that landed. Not because the arithmetic changed, but because α is a property of the *procedure*, and you changed the procedure.

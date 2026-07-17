@@ -1,7 +1,7 @@
 [
   {
     "id": "hdmt-park",
-    "period": "Dec 2024 — Jun 2025",
+    "period": "Dec 2024 to Jun 2025",
     "start": 2024.92,
     "title": "Research Intern",
     "org": "High-Dimensional Multiple Testing Lab, SNU Statistics",
@@ -10,7 +10,7 @@
   },
   {
     "id": "siml-lee",
-    "period": "Jul 2025 — Jan 2026",
+    "period": "Jul 2025 to Jan 2026",
     "start": 2025.5,
     "title": "Research Intern",
     "org": "Statistical Inference and Machine Learning Lab, KAIST AI",
@@ -19,7 +19,7 @@
   },
   {
     "id": "linqalpha-fde",
-    "period": "Feb 2026 — Jun 2026",
+    "period": "Feb 2026 to Jun 2026",
     "start": 2026.08,
     "title": "Forward Deployed Engineer",
     "org": "LinqAlpha",
@@ -27,7 +27,7 @@
   },
   {
     "id": "mllab-song",
-    "period": "Jun 2026 — present",
+    "period": "Jun 2026 to present",
     "start": 2026.42,
     "title": "Research Intern",
     "org": "MLLAB, SNU CSE",
