@@ -1,0 +1,20 @@
+[
+  {
+    "id": "snu-grad",
+    "period": "2024 — present",
+    "start": 2024,
+    "title": "Graduate Researcher",
+    "org": "Seoul National University",
+    "description": "Placeholder entry. Replace with your actual research focus, lab, and advisor.",
+    "kind": "research"
+  },
+  {
+    "id": "snu-undergrad",
+    "period": "2020 — 2024",
+    "start": 2020,
+    "title": "B.S.",
+    "org": "Seoul National University",
+    "description": "Placeholder entry. Replace with your degree and any highlights worth surfacing.",
+    "kind": "education"
+  }
+]

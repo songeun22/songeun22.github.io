@@ -1,0 +1,343 @@
+---
+/**
+ * Interactive one-sided z-test. Drag the effect size, sample size and
+ * alpha to watch the rejection region and power move.
+ *
+ * Pattern to copy for future demos: markup + scoped <style> + a plain
+ * <script> island. No framework needed unless state gets hairy.
+ */
+---
+
+<figure class="demo">
+  <canvas id="sig-canvas" role="img" aria-label="Null and alternative sampling distributions with the rejection region shaded"></canvas>
+
+  <div class="controls">
+    <label>
+      <span>True effect <em>d</em></span>
+      <input id="c-effect" type="range" min="0" max="1.5" step="0.01" value="0.5" />
+      <output id="o-effect">0.50</output>
+    </label>
+
+    <label>
+      <span>Sample size <em>n</em></span>
+      <input id="c-n" type="range" min="4" max="200" step="1" value="25" />
+      <output id="o-n">25</output>
+    </label>
+
+    <label>
+      <span>Significance <em>α</em></span>
+      <input id="c-alpha" type="range" min="0.001" max="0.2" step="0.001" value="0.05" />
+      <output id="o-alpha">0.050</output>
+    </label>
+  </div>
+
+  <div class="readout">
+    <div><span class="k">Critical value</span><span class="v" id="r-crit">—</span></div>
+    <div><span class="k">Power (1−β)</span><span class="v" id="r-power">—</span></div>
+    <div><span class="k">Type II (β)</span><span class="v" id="r-beta">—</span></div>
+  </div>
+
+  <figcaption>
+    The <span class="sw null"></span> curve is what sample means look like <em>if the null is true</em>.
+    The <span class="sw alt"></span> curve is what they look like given the true effect.
+    Everything right of the dashed line gets called “significant”.
+  </figcaption>
+</figure>
+
+<style>
+  .demo {
+    margin: var(--space-8) 0;
+    padding: var(--space-4);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-sans);
+  }
+
+  canvas {
+    width: 100%;
+    height: 260px;
+    display: block;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: var(--space-3) var(--space-6);
+    margin-top: var(--space-4);
+  }
+
+  label {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0 var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  label span {
+    grid-column: 1;
+  }
+
+  label em {
+    font-family: var(--font-serif);
+    color: var(--text);
+  }
+
+  output {
+    grid-column: 2;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type='range'] {
+    grid-column: 1 / -1;
+    width: 100%;
+    accent-color: var(--accent);
+    margin-top: var(--space-1);
+  }
+
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+  }
+
+  .readout > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .k {
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+  }
+
+  .v {
+    font-family: var(--font-mono);
+    font-size: var(--text-lg);
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  figcaption {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--text-muted);
+  }
+
+  .sw {
+    display: inline-block;
+    width: 0.7em;
+    height: 0.7em;
+    border-radius: 2px;
+    vertical-align: baseline;
+  }
+
+  .sw.null {
+    background: var(--text-faint);
+  }
+
+  .sw.alt {
+    background: var(--accent);
+  }
+</style>
+
+<script>
+  const canvas = document.getElementById('sig-canvas') as HTMLCanvasElement | null;
+  if (canvas) {
+    const ctx = canvas.getContext('2d')!;
+
+    const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+    const cEffect = el<HTMLInputElement>('c-effect');
+    const cN = el<HTMLInputElement>('c-n');
+    const cAlpha = el<HTMLInputElement>('c-alpha');
+
+    const pdf = (x: number, mu: number, sd: number) =>
+      Math.exp(-0.5 * ((x - mu) / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI));
+
+    // Abramowitz & Stegun 7.1.26 — plenty accurate for drawing.
+    const erf = (x: number) => {
+      const s = Math.sign(x);
+      x = Math.abs(x);
+      const t = 1 / (1 + 0.3275911 * x);
+      const y =
+        1 -
+        ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t +
+          0.254829592) *
+          t *
+          Math.exp(-x * x);
+      return s * y;
+    };
+    const cdf = (x: number, mu: number, sd: number) =>
+      0.5 * (1 + erf((x - mu) / (sd * Math.SQRT2)));
+
+    /** Inverse standard normal (Acklam's approximation). */
+    const probit = (p: number) => {
+      const a = [-3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.38357751867269e2, -3.066479806614716e1, 2.506628277459239];
+      const b = [-5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1, -1.328068155288572e1];
+      const c = [-7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+      const d = [7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416];
+      const pl = 0.02425;
+      let q: number, r: number;
+      if (p < pl) {
+        q = Math.sqrt(-2 * Math.log(p));
+        return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+      }
+      if (p > 1 - pl) return -probit(1 - p);
+      q = p - 0.5;
+      r = q * q;
+      return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q /
+        (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+    };
+
+    const css = (name: string) =>
+      getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+    let W = 0;
+    let H = 0;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      W = rect.width;
+      H = rect.height;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    const draw = () => {
+      const d = parseFloat(cEffect.value);
+      const n = parseInt(cN.value, 10);
+      const alpha = parseFloat(cAlpha.value);
+
+      const se = 1 / Math.sqrt(n);
+      const crit = probit(1 - alpha) * se;
+      const power = 1 - cdf(crit, d, se);
+
+      el<HTMLOutputElement>('o-effect').value = d.toFixed(2);
+      el<HTMLOutputElement>('o-n').value = String(n);
+      el<HTMLOutputElement>('o-alpha').value = alpha.toFixed(3);
+      el('r-crit').textContent = crit.toFixed(3);
+      el('r-power').textContent = (power * 100).toFixed(1) + '%';
+      el('r-beta').textContent = ((1 - power) * 100).toFixed(1) + '%';
+
+      // Keep both curves and the critical line comfortably in frame.
+      const span = Math.max(4 * se, d + 4 * se, crit + se) * 1.05;
+      const xMin = -span;
+      const xMax = span;
+      const padB = 26;
+      const padT = 14;
+
+      const peak = pdf(0, 0, se);
+      const X = (x: number) => ((x - xMin) / (xMax - xMin)) * W;
+      const Y = (y: number) => H - padB - (y / peak) * (H - padB - padT);
+
+      const accent = css('--accent') || '#2f5ea8';
+      const faint = css('--text-faint') || '#8f8f88';
+      const border = css('--border') || '#e4e4e0';
+      const textMuted = css('--text-muted') || '#5c5c56';
+
+      ctx.clearRect(0, 0, W, H);
+
+      const curve = (mu: number) => {
+        const pts: [number, number][] = [];
+        for (let px = 0; px <= W; px += 1) {
+          const x = xMin + (px / W) * (xMax - xMin);
+          pts.push([px, Y(pdf(x, mu, se))]);
+        }
+        return pts;
+      };
+
+      const fillUnder = (pts: [number, number][], from: number, color: string, a: number) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(from, H - padB);
+        for (const [px, py] of pts) if (px >= from) ctx.lineTo(px, py);
+        ctx.lineTo(W, H - padB);
+        ctx.closePath();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+      };
+
+      const stroke = (pts: [number, number][], color: string, width = 2) => {
+        ctx.beginPath();
+        pts.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)));
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.stroke();
+      };
+
+      const nullPts = curve(0);
+      const altPts = curve(d);
+      const critPx = X(crit);
+
+      // Shaded tails: alpha under the null, power under the alternative.
+      fillUnder(altPts, critPx, accent, 0.28);
+      fillUnder(nullPts, critPx, faint, 0.45);
+
+      stroke(nullPts, faint, 1.5);
+      stroke(altPts, accent, 2);
+
+      // Baseline
+      ctx.beginPath();
+      ctx.moveTo(0, H - padB);
+      ctx.lineTo(W, H - padB);
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Critical value line
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(critPx, padT - 6);
+      ctx.lineTo(critPx, H - padB);
+      ctx.strokeStyle = textMuted;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.font = `500 11px ${css('--font-sans') || 'sans-serif'}`;
+      ctx.fillStyle = textMuted;
+      ctx.textAlign = critPx > W - 60 ? 'right' : 'left';
+      ctx.fillText('reject →', critPx + (critPx > W - 60 ? -6 : 6), padT);
+
+      // x ticks at 0 and d
+      ctx.textAlign = 'center';
+      ctx.fillStyle = faint;
+      ctx.fillText('0', X(0), H - padB + 15);
+      if (Math.abs(X(d) - X(0)) > 22) ctx.fillText('d', X(d), H - padB + 15);
+    };
+
+    const render = () => {
+      resize();
+      draw();
+    };
+
+    for (const input of [cEffect, cN, cAlpha]) {
+      input.addEventListener('input', draw);
+    }
+
+    window.addEventListener('resize', render);
+    // Token values change with the theme, so redraw when it flips.
+    new MutationObserver(draw).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
+    if (document.fonts?.ready) document.fonts.ready.then(render);
+    render();
+  }
+</script>

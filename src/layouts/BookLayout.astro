@@ -1,0 +1,414 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import type { MarkdownHeading } from 'astro';
+import Base from './Base.astro';
+
+interface Props {
+  book: CollectionEntry<'books'>;
+  chapters: CollectionEntry<'library'>[];
+  current: CollectionEntry<'library'>;
+  headings: MarkdownHeading[];
+}
+
+const { book, chapters, current, headings } = Astro.props;
+
+const bookId = book.id;
+const chapterSlug = (c: CollectionEntry<'library'>) => c.id.split('/').slice(1).join('/');
+const href = (c: CollectionEntry<'library'>) => `/library/${bookId}/${chapterSlug(c)}`;
+
+const idx = chapters.findIndex((c) => c.id === current.id);
+const prev = idx > 0 ? chapters[idx - 1] : null;
+const next = idx < chapters.length - 1 ? chapters[idx + 1] : null;
+
+// Only h2/h3 — deeper nesting makes the rail unreadable.
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+<Base title={`${current.data.title} · ${book.data.title}`} description={current.data.description} bare>
+  <div class="shell">
+    <!-- Persistent left rail -->
+    <aside id="rail">
+      <div class="rail-inner">
+        <a class="back" href="/library">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6"></path>
+          </svg>
+          Library
+        </a>
+
+        <a class="book-title" href={href(chapters[0])}>{book.data.title}</a>
+        {book.data.subtitle && <p class="book-sub">{book.data.subtitle}</p>}
+
+        <nav aria-label="Chapters">
+          <ol>
+            {
+              chapters.map((c, i) => {
+                const isCurrent = c.id === current.id;
+                return (
+                  <li>
+                    <a class:list={['chapter', isCurrent && 'current']} href={href(c)}>
+                      <span class="num">{String(i + 1).padStart(2, '0')}</span>
+                      <span>{c.data.title}</span>
+                    </a>
+
+                    {/* The current chapter expands to show its own headings. */}
+                    {isCurrent && toc.length > 0 && (
+                      <ul class="toc">
+                        {toc.map((h) => (
+                          <li class:list={[`d${h.depth}`]}>
+                            <a href={`#${h.slug}`} data-toc-link={h.slug}>
+                              {h.text}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })
+            }
+          </ol>
+        </nav>
+      </div>
+    </aside>
+
+    <div class="content">
+      <article class="prose">
+        <header class="head">
+          <p class="eyebrow">{book.data.title}</p>
+          <h1>{current.data.title}</h1>
+          {current.data.description && <p class="lede">{current.data.description}</p>}
+        </header>
+
+        <slot />
+      </article>
+
+      <nav class="pager" aria-label="Chapter navigation">
+        {
+          prev ? (
+            <a class="pg prev" href={href(prev)}>
+              <span class="dir">← Previous</span>
+              <span class="t">{prev.data.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+        {
+          next && (
+            <a class="pg next" href={href(next)}>
+              <span class="dir">Next →</span>
+              <span class="t">{next.data.title}</span>
+            </a>
+          )
+        }
+      </nav>
+    </div>
+  </div>
+
+  <button id="rail-toggle" type="button" aria-expanded="false" aria-controls="rail">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+      <path d="M3 6h18M3 12h18M3 18h18"></path>
+    </svg>
+    Contents
+  </button>
+</Base>
+
+<style>
+  .shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    gap: var(--space-12);
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--space-6);
+    align-items: start;
+  }
+
+  /* Sticky, independently scrollable, always on. */
+  #rail {
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100dvh - var(--nav-h));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-right: 1px solid var(--border);
+    padding: var(--space-8) var(--space-4) var(--space-8) 0;
+    scrollbar-width: thin;
+  }
+
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    color: var(--text-faint);
+    text-decoration: none;
+    margin-bottom: var(--space-6);
+  }
+
+  .back svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .back:hover {
+    color: var(--accent);
+  }
+
+  .book-title {
+    display: block;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+    line-height: var(--leading-tight);
+  }
+
+  .book-sub {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--text-faint);
+  }
+
+  nav {
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border);
+  }
+
+  ol,
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .chapter {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .chapter:hover {
+    color: var(--text);
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+    padding-top: 0.15em;
+  }
+
+  .chapter.current {
+    color: var(--accent);
+    font-weight: var(--weight-medium);
+  }
+
+  .chapter.current .num {
+    color: var(--accent);
+  }
+
+  .toc {
+    margin: var(--space-1) 0 var(--space-3);
+    padding-left: calc(var(--space-6) + 2px);
+    border-left: 1px solid var(--border);
+    margin-left: var(--space-2);
+  }
+
+  .toc a {
+    display: block;
+    padding: var(--space-1) 0;
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+    color: var(--text-faint);
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    color: var(--text);
+  }
+
+  .toc li.d3 a {
+    padding-left: var(--space-3);
+  }
+
+  .toc a[data-active] {
+    color: var(--text);
+    font-weight: var(--weight-medium);
+  }
+
+  .content {
+    padding-block: var(--space-12) var(--space-16);
+    min-width: 0;
+  }
+
+  /* Let the text fill the column instead of stopping at the default reading
+     measure. The shell is the same 1200px box as the nav, so the right edge
+     of a paragraph now lines up with the right end of the menu above it. */
+  .prose,
+  .pager {
+    max-width: none;
+  }
+
+  .head {
+    margin-bottom: var(--space-8);
+  }
+
+  .head h1 {
+    font-family: var(--font-sans);
+    font-size: var(--text-3xl);
+    margin-top: var(--space-2);
+  }
+
+  .lede {
+    margin-top: var(--space-4);
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
+    color: var(--text-muted);
+  }
+
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    max-width: var(--measure);
+    margin-top: var(--space-16);
+    padding-top: var(--space-8);
+    border-top: 1px solid var(--border);
+  }
+
+  .pg {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    text-decoration: none;
+    max-width: 45%;
+  }
+
+  .pg.next {
+    text-align: right;
+    margin-left: auto;
+  }
+
+  .dir {
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+  }
+
+  .pg .t {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--text);
+  }
+
+  .pg:hover .t {
+    color: var(--accent);
+  }
+
+  #rail-toggle {
+    display: none;
+    position: fixed;
+    bottom: var(--space-6);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    box-shadow: var(--shadow);
+  }
+
+  #rail-toggle svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  @media (max-width: 900px) {
+    .shell {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
+    #rail {
+      position: fixed;
+      inset: var(--nav-h) 0 0 0;
+      z-index: 30;
+      height: auto;
+      background: var(--bg);
+      border-right: 0;
+      padding: var(--space-6);
+      display: none;
+    }
+
+    :global(body.rail-open) #rail {
+      display: block;
+    }
+
+    #rail-toggle {
+      display: inline-flex;
+    }
+  }
+</style>
+
+<script>
+  // Mobile contents drawer
+  const toggle = document.getElementById('rail-toggle');
+  toggle?.addEventListener('click', () => {
+    const open = document.body.classList.toggle('rail-open');
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+
+  document.getElementById('rail')?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a')) {
+      document.body.classList.remove('rail-open');
+      toggle?.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Highlight the heading currently being read.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')];
+  if (links.length) {
+    const targets = links
+      .map((l) => document.getElementById(l.dataset.tocLink!))
+      .filter((el): el is HTMLElement => !!el);
+
+    let active: string | null = null;
+    const setActive = (id: string | null) => {
+      if (id === active) return;
+      active = id;
+      for (const l of links) {
+        if (l.dataset.tocLink === id) l.setAttribute('data-active', '');
+        else l.removeAttribute('data-active');
+      }
+    };
+
+    const onScroll = () => {
+      const line = window.innerHeight * 0.3;
+      let found: string | null = null;
+      for (const t of targets) {
+        if (t.getBoundingClientRect().top <= line) found = t.id;
+      }
+      // Before the first heading scrolls past, keep it lit.
+      setActive(found ?? targets[0]?.id ?? null);
+    };
+
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+</script>

@@ -1,0 +1,113 @@
+---
+/**
+ * Fades + lifts its children into view once on scroll.
+ * Wrap any block: <Reveal delay={100}>...</Reveal>
+ *
+ * Content is visible by default and only hidden once JS confirms it can
+ * animate, so no-JS and pre-hydration readers never see a blank page.
+ */
+interface Props {
+  /** ms to stagger this element behind its neighbours */
+  delay?: number;
+  class?: string;
+}
+
+const { delay = 0, class: className } = Astro.props;
+---
+
+<div class:list={['reveal', className]} data-reveal style={`--reveal-delay: ${delay}ms`}>
+  <slot />
+</div>
+
+<style>
+  .reveal {
+    transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .reveal[data-armed] {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  .reveal[data-armed][data-shown] {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal[data-armed] {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  const setup = () => {
+    const items = document.querySelectorAll<HTMLElement>('[data-reveal]:not([data-armed])');
+    if (!items.length) return;
+
+    // No observer or no motion budget: leave everything visible as authored.
+    if (
+      !('IntersectionObserver' in window) ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      return;
+    }
+
+    let observerReported = false;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Any callback at all — intersecting or not — proves the observer
+        // is alive, which is what the failsafe below is watching for.
+        observerReported = true;
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          (entry.target as HTMLElement).dataset.shown = '';
+          observer.unobserve(entry.target);
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.05 },
+    );
+
+    for (const item of items) {
+      // Arm (hide) and observe together. The observer always delivers an
+      // initial entry per target, so anything already on screen is shown on
+      // the next frame without consulting the viewport ourselves.
+      item.dataset.armed = '';
+      observer.observe(item);
+    }
+
+    // Failsafe for a dead observer only. Elements that are merely below the
+    // fold are waiting legitimately and must be left alone.
+    //
+    // A hidden document (background tab) legitimately never fires the
+    // observer, so only start the clock once we're actually being looked at
+    // — otherwise a link opened in a new tab loses its animation.
+    const armFailsafe = () =>
+      setTimeout(() => {
+        if (observerReported) return;
+        observer.disconnect();
+        for (const item of items) item.dataset.shown = '';
+      }, 2000);
+
+    if (document.visibilityState === 'visible') {
+      armFailsafe();
+    } else {
+      document.addEventListener(
+        'visibilitychange',
+        function onVisible() {
+          if (document.visibilityState !== 'visible') return;
+          document.removeEventListener('visibilitychange', onVisible);
+          armFailsafe();
+        },
+        // Not { once: true }: we must ignore any non-visible transitions.
+      );
+    }
+  };
+
+  setup();
+  document.addEventListener('astro:after-swap', setup);
+</script>

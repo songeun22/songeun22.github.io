@@ -1,0 +1,7 @@
+{
+  "title": "Probabilistic Graph Learning",
+  "subtitle": "Structure as an assumption about independence",
+  "description": "Planned. Reading a graph as a set of conditional independence claims, and what learning that structure from data really commits you to.",
+  "order": 3,
+  "status": "planned"
+}

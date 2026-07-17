@@ -1,0 +1,79 @@
+---
+// Sun/moon toggle. The actual theme is applied by an inline script in
+// Base.astro before paint; this only flips and persists the choice.
+---
+
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+  </svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+  </svg>
+</button>
+
+<style>
+  button {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+  }
+
+  button:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+    grid-area: 1 / 1;
+    transition: opacity 0.2s var(--ease), transform 0.3s var(--ease);
+  }
+
+  /* Show the icon for the theme you'd switch *to*. */
+  .moon {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+  .sun {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+  }
+
+  :global([data-theme='dark']) .moon {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.6);
+  }
+  :global([data-theme='dark']) .sun {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+</style>
+
+<script>
+  const toggle = document.getElementById('theme-toggle');
+
+  let timer: ReturnType<typeof setTimeout>;
+
+  toggle?.addEventListener('click', () => {
+    const root = document.documentElement;
+    const isDark = root.dataset.theme === 'dark';
+    const next = isDark ? 'light' : 'dark';
+
+    // Mount the cross-fade only while the colours are actually changing.
+    root.classList.add('theme-transition');
+    root.dataset.theme = next;
+    localStorage.setItem('theme', next);
+
+    clearTimeout(timer);
+    timer = setTimeout(() => root.classList.remove('theme-transition'), 300);
+  });
+</script>

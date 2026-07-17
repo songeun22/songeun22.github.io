@@ -1,0 +1,61 @@
+---
+import { site, socials } from '../site.config';
+
+const year = new Date().getFullYear();
+---
+
+<footer>
+  <div class="inner page">
+    <p class="copy">© {year} {site.name}</p>
+    <ul>
+      {
+        socials.map((s) => (
+          <li>
+            <a href={s.href} rel="me noopener">
+              {s.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</footer>
+
+<style>
+  footer {
+    margin-top: var(--space-24);
+    border-top: 1px solid var(--border);
+    padding-block: var(--space-8);
+  }
+
+  .inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .copy {
+    font-size: var(--text-sm);
+    color: var(--text-faint);
+  }
+
+  ul {
+    display: flex;
+    gap: var(--space-6);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  a {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+</style>

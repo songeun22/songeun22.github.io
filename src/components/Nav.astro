@@ -1,0 +1,204 @@
+---
+import { nav, site } from '../site.config';
+import ThemeToggle from './ThemeToggle.astro';
+
+const path = Astro.url.pathname;
+
+/** `/library/foo/bar` should still light up the Library tab. */
+function isActive(href: string) {
+  if (href === '/') return path === '/';
+  return path === href || path.startsWith(href + '/');
+}
+---
+
+<header>
+  <div class="bar">
+    <a class="brand" href="/">{site.name}</a>
+
+    <nav aria-label="Main">
+      <ul>
+        {
+          nav.map((item) => (
+            <li>
+              <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="actions">
+      <ThemeToggle />
+      <button id="nav-open" type="button" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 6h18M3 12h18M3 18h18"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile drawer -->
+  <div class="drawer" id="nav-drawer" hidden>
+    <ul>
+      {
+        nav.map((item) => (
+          <li>
+            <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</header>
+
+<style>
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s var(--ease);
+  }
+
+  /* Border only appears once you've scrolled, so the top of the page
+     stays visually open. */
+  :global(body.scrolled) header {
+    border-bottom-color: var(--border);
+  }
+
+  .bar {
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--space-6);
+    height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+  }
+
+  .brand {
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-base);
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+    margin-right: auto;
+  }
+
+  nav ul {
+    display: flex;
+    gap: var(--space-6);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  nav a {
+    position: relative;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--text-muted);
+    text-decoration: none;
+    padding-block: var(--space-2);
+  }
+
+  nav a:hover {
+    color: var(--text);
+  }
+
+  nav a[aria-current='page'] {
+    color: var(--text);
+  }
+
+  nav a[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  #nav-open {
+    display: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+  }
+
+  #nav-open svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .drawer {
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    padding: var(--space-2) var(--space-6) var(--space-4);
+  }
+
+  .drawer ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .drawer a {
+    display: block;
+    padding: var(--space-3) 0;
+    font-size: var(--text-base);
+    font-weight: var(--weight-medium);
+    color: var(--text-muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .drawer a[aria-current='page'] {
+    color: var(--accent);
+  }
+
+  @media (max-width: 720px) {
+    nav {
+      display: none;
+    }
+    #nav-open {
+      display: grid;
+    }
+  }
+</style>
+
+<script>
+  const openBtn = document.getElementById('nav-open');
+  const drawer = document.getElementById('nav-drawer');
+
+  openBtn?.addEventListener('click', () => {
+    const isOpen = openBtn.getAttribute('aria-expanded') === 'true';
+    openBtn.setAttribute('aria-expanded', String(!isOpen));
+    if (drawer) drawer.hidden = isOpen;
+  });
+
+  const onScroll = () => {
+    document.body.classList.toggle('scrolled', window.scrollY > 8);
+  };
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+</script>

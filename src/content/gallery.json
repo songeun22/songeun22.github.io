@@ -1,0 +1,66 @@
+[
+  {
+    "id": "g01",
+    "image": "placeholder-01.jpg",
+    "title": "Placeholder 01",
+    "description": "Drop your own photo into src/images/gallery/ and edit this entry.",
+    "year": "2026",
+    "kind": "photo"
+  },
+  {
+    "id": "g02",
+    "image": "placeholder-02.jpg",
+    "title": "Placeholder 02",
+    "description": "The hover caption comes from this description field.",
+    "year": "2026",
+    "kind": "photo"
+  },
+  {
+    "id": "g03",
+    "image": "placeholder-03.jpg",
+    "title": "Placeholder 03",
+    "description": "Square crop, to check the masonry keeps its rhythm.",
+    "year": "2025",
+    "kind": "drawing"
+  },
+  {
+    "id": "g04",
+    "image": "placeholder-04.jpg",
+    "title": "Placeholder 04",
+    "description": "Tall portrait — aspect ratio is read from the file, not set here.",
+    "year": "2025",
+    "kind": "photo"
+  },
+  {
+    "id": "g05",
+    "image": "placeholder-05.jpg",
+    "title": "Placeholder 05",
+    "description": "Wide landscape.",
+    "year": "2025",
+    "kind": "photo"
+  },
+  {
+    "id": "g06",
+    "image": "placeholder-06.jpg",
+    "title": "Placeholder 06",
+    "description": "Drawings and photos share one grid; filter with the toggle.",
+    "year": "2024",
+    "kind": "drawing"
+  },
+  {
+    "id": "g07",
+    "image": "placeholder-07.jpg",
+    "title": "Placeholder 07",
+    "description": "Reorder by editing this file, or hit shuffle on the page.",
+    "year": "2024",
+    "kind": "photo"
+  },
+  {
+    "id": "g08",
+    "image": "placeholder-08.jpg",
+    "title": "Placeholder 08",
+    "description": "Last of the placeholders.",
+    "year": "2024",
+    "kind": "photo"
+  }
+]

@@ -1,0 +1,272 @@
+---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+
+const items = await getCollection('gallery');
+
+// Files live outside the content dir, so pair them up by filename.
+const files = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/images/gallery/*.{jpg,jpeg,png,webp,avif}',
+  { eager: true },
+);
+
+const photos = items.map((item) => {
+  const match = files[`/src/images/gallery/${item.data.image}`];
+  if (!match) {
+    throw new Error(
+      `gallery.json references "${item.data.image}" but src/images/gallery/${item.data.image} doesn't exist.`,
+    );
+  }
+  return { ...item.data, src: match.default };
+});
+---
+
+<Base title="Gallery" description="Photographs and drawings.">
+  <header class="head">
+    <p class="eyebrow">Gallery</p>
+    <h1>Things I saw and things I drew</h1>
+  </header>
+
+  <div class="bar">
+    <div class="filters" role="group" aria-label="Filter">
+      <button type="button" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" data-filter="photo" aria-pressed="false">Photos</button>
+      <button type="button" data-filter="drawing" aria-pressed="false">Drawings</button>
+    </div>
+
+    <button id="shuffle" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path>
+      </svg>
+      Shuffle
+    </button>
+  </div>
+
+  <!-- CSS columns: every image keeps its own aspect ratio, no cropping. -->
+  <div class="grid" id="grid">
+    {
+      photos.map((p) => (
+        <figure class="tile" data-kind={p.kind}>
+          <Image
+            src={p.src}
+            alt={p.description ?? p.title}
+            widths={[320, 480, 720, 960]}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            loading="lazy"
+          />
+          <figcaption>
+            <span class="t">{p.title}</span>
+            {p.description && <span class="d">{p.description}</span>}
+            {p.year && <span class="y">{p.year}</span>}
+          </figcaption>
+        </figure>
+      ))
+    }
+  </div>
+
+  <p class="empty" id="empty" hidden>Nothing here yet.</p>
+</Base>
+
+<style>
+  .head {
+    padding-block: var(--space-16) var(--space-8);
+  }
+
+  .head h1 {
+    font-size: var(--text-3xl);
+    margin-top: var(--space-2);
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    padding-bottom: var(--space-8);
+  }
+
+  .filters {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .filters button {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--text-faint);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 999px;
+  }
+
+  .filters button:hover {
+    color: var(--text);
+  }
+
+  .filters button[aria-pressed='true'] {
+    color: var(--text);
+    background: var(--bg-subtle);
+    border-color: var(--border);
+  }
+
+  #shuffle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+  }
+
+  #shuffle:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+
+  #shuffle svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .grid {
+    columns: 4;
+    column-gap: var(--space-4);
+    padding-bottom: var(--space-8);
+  }
+
+  .tile {
+    position: relative;
+    break-inside: avoid;
+    margin: 0 0 var(--space-4);
+    /* Square corners — the photograph's own edge is the edge. */
+    overflow: hidden;
+    background: var(--bg-subtle);
+    cursor: zoom-in;
+  }
+
+  .tile img {
+    width: 100%;
+    height: auto;
+    transition: transform 0.5s var(--ease), filter 0.4s var(--ease);
+  }
+
+  .tile:hover img {
+    transform: scale(1.03);
+    filter: brightness(0.68);
+  }
+
+  figcaption {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-4);
+    background: linear-gradient(transparent, rgb(0 0 0 / 0.72));
+    color: #fff;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+    pointer-events: none;
+  }
+
+  .tile:hover figcaption,
+  .tile:focus-within figcaption {
+    opacity: 1;
+    transform: none;
+  }
+
+  .t {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+  }
+
+  .d {
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+    color: rgb(255 255 255 / 0.82);
+  }
+
+  .y {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgb(255 255 255 / 0.6);
+    margin-top: var(--space-1);
+  }
+
+  .empty {
+    padding-block: var(--space-16);
+    text-align: center;
+    color: var(--text-faint);
+  }
+
+  /* Touch devices have no hover, so the caption just stays on. */
+  @media (hover: none) {
+    figcaption {
+      opacity: 1;
+      transform: none;
+    }
+    .tile {
+      cursor: default;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .grid {
+      columns: 3;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .grid {
+      columns: 2;
+      column-gap: var(--space-2);
+    }
+    .tile {
+      margin-bottom: var(--space-2);
+    }
+    figcaption {
+      padding: var(--space-2);
+    }
+    .d {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const grid = document.getElementById('grid')!;
+  const empty = document.getElementById('empty')!;
+  const tiles = () => [...grid.querySelectorAll<HTMLElement>('.tile')];
+
+  const applyFilter = (kind: string) => {
+    let shown = 0;
+    for (const tile of tiles()) {
+      const match = kind === 'all' || tile.dataset.kind === kind;
+      tile.hidden = !match;
+      if (match) shown++;
+    }
+    empty.hidden = shown > 0;
+  };
+
+  for (const btn of document.querySelectorAll<HTMLButtonElement>('.filters button')) {
+    btn.addEventListener('click', () => {
+      for (const b of document.querySelectorAll('.filters button')) {
+        b.setAttribute('aria-pressed', String(b === btn));
+      }
+      applyFilter(btn.dataset.filter!);
+    });
+  }
+
+  document.getElementById('shuffle')?.addEventListener('click', () => {
+    const shuffled = tiles().sort(() => Math.random() - 0.5);
+    for (const t of shuffled) grid.appendChild(t);
+  });
+</script>

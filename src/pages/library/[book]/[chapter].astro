@@ -1,0 +1,28 @@
+---
+import { getCollection, render } from 'astro:content';
+import BookLayout from '../../../layouts/BookLayout.astro';
+import { getBookChapters } from '../../../lib/library';
+
+export async function getStaticPaths() {
+  const books = await getCollection('books');
+
+  const paths = [];
+  for (const book of books) {
+    const chapters = await getBookChapters(book.id);
+    for (const chapter of chapters) {
+      paths.push({
+        params: { book: book.id, chapter: chapter.id.split('/').slice(1).join('/') },
+        props: { book, chapters, chapter },
+      });
+    }
+  }
+  return paths;
+}
+
+const { book, chapters, chapter } = Astro.props;
+const { Content, headings } = await render(chapter);
+---
+
+<BookLayout book={book} chapters={chapters} current={chapter} headings={headings}>
+  <Content />
+</BookLayout>
