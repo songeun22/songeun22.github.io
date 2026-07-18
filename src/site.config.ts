@@ -26,13 +26,14 @@ export const nav = [
   { label: 'Gallery', href: '/gallery' },
 ];
 
-/**
- * Rendered as icons only, in this order.
- * TODO: fill in the two placeholder URLs below with your real profiles.
- */
+/** Rendered as icons only, in this order. */
 export const socials = [
   { label: 'GitHub', icon: 'github', href: 'https://github.com/songeun22' },
   { label: 'Email', icon: 'email', href: 'mailto:songeun22@snu.ac.kr' },
-  { label: 'Google Scholar', icon: 'scholar', href: 'https://scholar.google.com/' },
-  { label: 'LinkedIn', icon: 'linkedin', href: 'https://www.linkedin.com/' },
+  {
+    label: 'Google Scholar',
+    icon: 'scholar',
+    href: 'https://scholar.google.com/citations?user=G54q5IkAAAAJ&hl=en&oi=sra',
+  },
+  { label: 'LinkedIn', icon: 'linkedin', href: 'https://www.linkedin.com/in/song-eun-kim-9a64a9262' },
 ];
