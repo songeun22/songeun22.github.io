@@ -1,7 +1,6 @@
 {
   "title": "High-Dimensional Statistics",
   "subtitle": "Where classical statistics stops working",
-  "description": "Studying how traditional statistical methods break down once the number of parameters grows with, or past, the sample size.",
   "order": 2,
   "color": "#6b4c9a",
   "status": "in-progress",
