@@ -1,0 +1,58 @@
+---
+/**
+ * LaTeX-style theorem environment. Reuse for Lemma, Theorem, Definition,
+ * Property, Corollary, whatever comes up next.
+ *
+ * Any $$...$$ inside the slot must have the delimiters on their own line
+ * to be parsed as display math, otherwise remark-math treats it as inline
+ * and it won't center.
+ */
+interface Props {
+  kind: string;
+  name?: string;
+}
+
+const { kind, name } = Astro.props;
+const label = name ? `${name} ${kind}` : kind;
+---
+
+<div class="theorem-box">
+  <p class="label">{label}</p>
+  <div class="body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .theorem-box {
+    margin: var(--space-8) 0;
+    padding: var(--space-6);
+    background: var(--accent-subtle);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: var(--radius-lg);
+  }
+
+  .label {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-sans);
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-sm);
+    color: var(--accent);
+  }
+
+  .body {
+    font-family: var(--font-serif);
+  }
+
+  .body :global(p) {
+    margin-top: var(--space-4);
+  }
+
+  .body :global(p:first-child) {
+    margin-top: 0;
+  }
+
+  .body :global(.katex-display) {
+    margin: var(--space-4) 0;
+  }
+</style>
