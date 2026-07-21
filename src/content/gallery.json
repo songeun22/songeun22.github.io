@@ -70,5 +70,13 @@
     "description": "Stars in Blue Mountains National Park",
     "year": "Feb 23, 2025",
     "kind": "photo"
+  },
+  {
+    "id": "g10",
+    "image": "fall-school.jpg",
+    "title": "",
+    "description": "School",
+    "year": "Oct, 2024",
+    "kind": "photo"
   }
 ]
