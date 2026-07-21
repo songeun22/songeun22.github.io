@@ -62,5 +62,13 @@
     "description": "Last of the placeholders.",
     "year": "2024",
     "kind": "photo"
+  },
+  {
+    "id": "g09",
+    "image": "stars-blue-mountains.jpg",
+    "title": "Stars",
+    "description": "Stars in Blue Mountains National Park",
+    "year": "Feb 23, 2025",
+    "kind": "photo"
   }
 ]

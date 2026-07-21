@@ -56,9 +56,11 @@ const photos = items.map((item) => {
             loading="lazy"
           />
           <figcaption>
-            <span class="t">{p.title}</span>
+            <div class="row">
+              <span class="t">{p.title}</span>
+              {p.year && <span class="y">{p.year}</span>}
+            </div>
             {p.description && <span class="d">{p.description}</span>}
-            {p.year && <span class="y">{p.year}</span>}
           </figcaption>
         </figure>
       ))
@@ -182,6 +184,13 @@ const photos = items.map((item) => {
     transform: none;
   }
 
+  .row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
   .t {
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
@@ -198,7 +207,8 @@ const photos = items.map((item) => {
     font-family: var(--font-mono);
     font-size: 10px;
     color: rgb(255 255 255 / 0.6);
-    margin-top: var(--space-1);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .empty {
