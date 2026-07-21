@@ -1,27 +1,24 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import type { MarkdownHeading } from 'astro';
 import Base from './Base.astro';
+import type { OutlineNode } from '../lib/library';
 
 interface Props {
   book: CollectionEntry<'books'>;
-  chapters: CollectionEntry<'library'>[];
+  outline: OutlineNode[];
+  pages: CollectionEntry<'library'>[];
   current: CollectionEntry<'library'>;
-  headings: MarkdownHeading[];
 }
 
-const { book, chapters, current, headings } = Astro.props;
+const { book, outline, pages, current } = Astro.props;
 
 const bookId = book.id;
 const chapterSlug = (c: CollectionEntry<'library'>) => c.id.split('/').slice(1).join('/');
 const href = (c: CollectionEntry<'library'>) => `/library/${bookId}/${chapterSlug(c)}`;
 
-const idx = chapters.findIndex((c) => c.id === current.id);
-const prev = idx > 0 ? chapters[idx - 1] : null;
-const next = idx < chapters.length - 1 ? chapters[idx + 1] : null;
-
-// Only h2/h3 — deeper nesting makes the rail unreadable.
-const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const idx = pages.findIndex((c) => c.id === current.id);
+const prev = idx > 0 ? pages[idx - 1] : null;
+const next = idx < pages.length - 1 ? pages[idx + 1] : null;
 ---
 
 <Base title={`${current.data.title} · ${book.data.title}`} description={current.data.description} bare>
@@ -36,28 +33,27 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
           Library
         </a>
 
-        <a class="book-title" href={href(chapters[0])}>{book.data.title}</a>
+        <a class="book-title" href={href(pages[0])}>{book.data.title}</a>
         {book.data.subtitle && <p class="book-sub">{book.data.subtitle}</p>}
 
         <nav aria-label="Chapters">
           <ol>
             {
-              chapters.map((c, i) => {
-                const isCurrent = c.id === current.id;
+              outline.map((node, i) => {
+                const isCurrent = node.page.id === current.id;
                 return (
                   <li>
-                    <a class:list={['chapter', isCurrent && 'current']} href={href(c)}>
+                    <a class:list={['chapter', isCurrent && 'current']} href={href(node.page)}>
                       <span class="num">{String(i + 1).padStart(2, '0')}</span>
-                      <span>{c.data.title}</span>
+                      <span>{node.page.data.title}</span>
                     </a>
 
-                    {/* The current chapter expands to show its own headings. */}
-                    {isCurrent && toc.length > 0 && (
-                      <ul class="toc">
-                        {toc.map((h) => (
-                          <li class:list={[`d${h.depth}`]}>
-                            <a href={`#${h.slug}`} data-toc-link={h.slug}>
-                              {h.text}
+                    {node.subpages.length > 0 && (
+                      <ul class="subpages">
+                        {node.subpages.map((sub) => (
+                          <li>
+                            <a class:list={['subpage', sub.id === current.id && 'current']} href={href(sub)}>
+                              {sub.data.title}
                             </a>
                           </li>
                         ))}
@@ -218,14 +214,14 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
     color: var(--accent);
   }
 
-  .toc {
+  .subpages {
     margin: var(--space-1) 0 var(--space-3);
     padding-left: calc(var(--space-6) + 2px);
     border-left: 1px solid var(--border);
     margin-left: var(--space-2);
   }
 
-  .toc a {
+  .subpage {
     display: block;
     padding: var(--space-1) 0;
     font-size: var(--text-xs);
@@ -234,16 +230,12 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
     text-decoration: none;
   }
 
-  .toc a:hover {
+  .subpage:hover {
     color: var(--text);
   }
 
-  .toc li.d3 a {
-    padding-left: var(--space-3);
-  }
-
-  .toc a[data-active] {
-    color: var(--text);
+  .subpage.current {
+    color: var(--accent);
     font-weight: var(--weight-medium);
   }
 
@@ -380,35 +372,4 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
       toggle?.setAttribute('aria-expanded', 'false');
     }
   });
-
-  // Highlight the heading currently being read.
-  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')];
-  if (links.length) {
-    const targets = links
-      .map((l) => document.getElementById(l.dataset.tocLink!))
-      .filter((el): el is HTMLElement => !!el);
-
-    let active: string | null = null;
-    const setActive = (id: string | null) => {
-      if (id === active) return;
-      active = id;
-      for (const l of links) {
-        if (l.dataset.tocLink === id) l.setAttribute('data-active', '');
-        else l.removeAttribute('data-active');
-      }
-    };
-
-    const onScroll = () => {
-      const line = window.innerHeight * 0.3;
-      let found: string | null = null;
-      for (const t of targets) {
-        if (t.getBoundingClientRect().top <= line) found = t.id;
-      }
-      // Before the first heading scrolls past, keep it lit.
-      setActive(found ?? targets[0]?.id ?? null);
-    };
-
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-  }
 </script>

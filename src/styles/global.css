@@ -254,13 +254,19 @@ button {
 .prose h2 {
   font-family: var(--font-sans);
   font-size: var(--text-2xl);
-  margin-top: var(--space-12);
+  margin-top: var(--space-16);
 }
 
 .prose h3 {
   font-family: var(--font-sans);
   font-size: var(--text-xl);
-  margin-top: var(--space-8);
+  margin-top: var(--space-12);
+}
+
+.prose hr {
+  margin: var(--space-12) 0;
+  border: none;
+  border-top: 1px solid var(--border);
 }
 
 .prose ul,

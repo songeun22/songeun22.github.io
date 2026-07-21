@@ -1,0 +1,60 @@
+---
+title: Fundamentals of Hypothesis Testing
+description: The classical frequentist picture, start to finish, before any of it gets pulled apart.
+order: 1
+---
+
+import SignificanceDemo from '../../../../components/demos/SignificanceDemo.astro';
+import ErrorMatrix from '../../../../components/demos/ErrorMatrix.astro';
+import TheoremBox from '../../../../components/TheoremBox.astro';
+
+## 1. What hypotheses are
+
+There are two types of hypotheses we define in advance of a hypothesis test, the **null** and the **alternative** hypotheses.
+
+- $H_0$: a default state, the state of the world in which the effect you're looking for is exactly zero.
+- $H_1$: the claim you're trying to prove, often the complement of $H_0$.
+
+The null hypothesis ($H_0$) has to be defined specifically enough to enable computation under that world. In other words, the parameters of your sampling distribution must be fully specified under the frequentist perspective.
+
+Now, let's take a concrete example. Suppose you're a drug discovery scientist who's run a clinical trial to show your drug is effective at mitigating some target symptom. Suppose you ran the trial on a sample of paired measurements, before and after the treatment, for each patient. Showing that the difference within each pair tends toward improvement is exactly what would make your drug effective.
+
+Since you're a frequentist, you'll first assume this difference follows some simple parametric distribution, $\text{diff} \sim f_\theta$ (simply, for example, $N(\mu_d, \sigma^2)$). (Assuming the pairs are controlled for, so nothing else is confounding the comparison.)
+
+Here, your hypothesis becomes:
+
+- $H_0$: $\mu_d = 0$
+- $H_1$: $\mu_d > 0$
+
+---
+
+## 2. Fundamentals of HT
+
+<ErrorMatrix />
+
+Generic hypothesis testing aims to choose the largest region we can call a “discovery,” at a fixed level of Type I error.
+
+<TheoremBox kind="Lemma" name="Neyman-Pearson">
+
+For a given significance level $\alpha$, and a predefined test statistic $T := T(X)$, the rejection region $C := C_\theta(\alpha)$, for the parameter of interest $\theta$, is defined as
+
+$$
+\max_{C} \; P(T \in C \mid H_1) \quad \text{s.t.} \quad P(T \in C \mid H_0) \le \alpha
+$$
+
+</TheoremBox>
+
+Two things worth keeping in mind here:
+
+<blockquote>
+1. On the choice of test statistic: in the asymptotic regime, as $n \to \infty$, the distribution of the test statistic gets standardized by the CLT, so the specific choice of $T$ stops mattering much, different valid choices become asymptotically equivalent.
+2. **Test-inversion duality**: invert the frequentist rejection region $C(\theta_0)$, and what falls out is exactly the $(1-\alpha)$ frequentist confidence interval.
+</blockquote>
+
+---
+
+## 3. Seeing the power and significance tradeoff
+
+Unlike Fisher's test (which is, historically, very much the origin of hypothesis testing), Neyman-Pearson resolves the tradeoff between power and significance level directly, fixing one and optimizing the other. Fisher's approach simply focuses on evidence against $H_0$ on its own (this is usually the first flavor of hypothesis testing anyone learns, back in high school). Neyman-Pearson is, in a sense, the mature endpoint of the frequentist perspective, fixing both hypotheses and both error rates in advance, and optimizing what's left to optimize.
+
+<SignificanceDemo />

@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import { getBookChapters } from '../../../lib/library';
+import { getBookPages } from '../../../lib/library';
 
 // A book has no page of its own — opening it means opening chapter one.
 export async function getStaticPaths() {
@@ -8,7 +8,7 @@ export async function getStaticPaths() {
 
   return Promise.all(
     books.map(async (book) => {
-      const chapters = await getBookChapters(book.id);
+      const chapters = await getBookPages(book.id);
       return {
         params: { book: book.id },
         props: { first: chapters[0] },
