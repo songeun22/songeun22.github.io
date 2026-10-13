@@ -1,9 +1,9 @@
 {
-  "title": "New Paradigms in Modern Statistics",
-  "subtitle": "Conformal prediction and martingale posteriors",
-  "description": "Starting from how far classical statistics assumptions can bend once a model is treated as a black box, and building toward conformal prediction and the martingale posterior.",
+  "title": "New Paradigms in Modern Statistics I",
+  "subtitle": "Conformal prediction, learn-then-test, and risk control",
+  "description": "Distribution-free inference for black-box models: conformal prediction, its limitations, and a review of learn-then-test, risk-controlling prediction sets, and conformal risk/policy control.",
   "order": 3,
   "color": "#2d7d6f",
   "status": "in-progress",
-  "updated": "2026-07-18"
+  "updated": "2026-10-13"
 }

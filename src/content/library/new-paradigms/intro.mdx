@@ -1,13 +1,16 @@
 ---
 title: Intro
-description: Loosening classical assumptions until a model can be treated as a black box.
+description: Why distribution-free inference matters once models become black boxes, and the primary sources this volume draws on.
 order: 1
 ---
 
-Classical statistics leans on strong assumptions, a known model family, correct specification, i.i.d. data, and this book starts by loosening them.
+In classical statistics, how we treat prediction depends on strong parametric assumptions. With the incredible growth of AI, where the model is effectively a black box, distribution-free inference is becoming a substantial field in statistics. And it is not only about inference: controlling the risk of predictions and detecting out-of-distribution (OOD) inputs are critical to controlling the quality of these machines.
 
-Push that far enough and you end up willing to treat a model as one black box machine, no promises about what's inside, no guarantee it's the "right" model for anything. The question this book actually starts from is what's left to say once you've given that up: how do you still get theoretically grounded statistics out of a system you're not allowed to look inside?
+Here, I introduce the most generic and simple framework among them, **conformal prediction**, and review its representative papers. The primary sources I reference in this section are listed below.
 
-Conformal prediction and the martingale posterior are two different answers to that question, and this book works through both.
-
-**TODO**, this is still just the intro. Next up: building out the conformal prediction track, then the martingale posterior track.
+> **Primary sources**
+>
+> - Anastasios N. Angelopoulos. [*A Tutorial on Conformal Prediction*](https://www.youtube.com/watch?v=nql000Lu_iE). YouTube.
+> - Anastasios N. Angelopoulos, Rina Foygel Barber, Stephen Bates. [*Theoretical Foundations of Conformal Prediction*](https://arxiv.org/abs/2411.11824). arXiv:2411.11824, 2024.
+> - Anastasios N. Angelopoulos, Stephen Bates, Emmanuel J. Candès, Michael I. Jordan, Lihua Lei. [*Learn then Test: Calibrating Predictive Algorithms to Achieve Risk Control*](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-19/issue-2/Learn-then-test--Calibrating-predictive-algorithms-to-achieve-risk/10.1214/24-AOAS1998.full). *The Annals of Applied Statistics* 19(2), 2025.
+> - Anastasios N. Angelopoulos, Stephen Bates. [*A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification*](https://arxiv.org/abs/2107.07511). arXiv:2107.07511, 2021.
