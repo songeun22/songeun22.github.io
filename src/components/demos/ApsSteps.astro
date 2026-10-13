@@ -1,0 +1,657 @@
+---
+/**
+ * Split conformal prediction with the APS score, one step at a time.
+ * Click a step on the left and the figure on the right builds up to it.
+ *
+ * Everything is computed here at build time (scores, quantile, layout), so
+ * the client script only toggles which layers are visible.
+ */
+import katex from 'katex';
+
+/** Render inline $...$ math in a step description. */
+const md = (s: string) =>
+  s.replace(/\$(.+?)\$/g, (_, tex) => katex.renderToString(tex, { throwOnError: false }));
+
+const steps = [
+  {
+    title: 'Construct the dataset',
+    body: 'Split the labeled data into three disjoint parts: a <b class="c-train">training</b> set of size $N$ that fits the black box $\\hat f$, a <b class="c-cal">calibration</b> set of size $n$, and a <b class="c-val">validation</b> set of size $n_{\\text{val}}$ held out to check coverage.',
+  },
+  {
+    title: 'Run the model',
+    body: 'Pass every calibration and validation point through $\\hat f$ once and cache its score $S_i = s(X_i, Y_i)$. For APS, sort the softmax outputs and add them up from the top until you reach the true label.',
+  },
+  {
+    title: 'Get the quantile $\\hat q$',
+    body: 'Collect the calibration scores $S_1, \\dots, S_n$ and set $\\hat q$ to their $\\lceil (n+1)(1-\\alpha) \\rceil / n$ empirical quantile.',
+  },
+  {
+    title: 'Get the prediction set for $x_{\\text{new}}$',
+    body: 'Run $\\hat f$ on the new input, sort its softmax outputs again, and keep the labels whose cumulative mass stays below $\\hat q$: $\\mathcal C(x_{\\text{new}}) = \\{ y : s(x_{\\text{new}}, y) \\le \\hat q \\}$.',
+  },
+].map((s) => ({ title: md(s.title), body: md(s.body) }));
+
+// ---- Data -------------------------------------------------------------
+
+const alpha = 0.1;
+const nCal = 500;
+
+// Deterministic PRNG so the figure is identical on every build.
+let seed = 7;
+const rand = () => ((seed = (seed * 16807) % 2147483647), seed / 2147483647);
+// A slightly left-skewed bell on [0.82, 0.98]: 0.82 + 0.16 * Beta(5, 3),
+// drawn as the 5th order statistic of 7 uniforms.
+const beta53 = () => Array.from({ length: 7 }, rand).sort((a, b) => a - b)[4];
+const scores = Array.from({ length: nCal }, () => 0.82 + 0.16 * beta53()).sort((a, b) => a - b);
+const qhat = scores[Math.ceil((nCal + 1) * (1 - alpha)) - 1];
+
+// ---- Geometry helpers -------------------------------------------------
+
+/** Horizontal curly brace over [x1, x2], flat at y, ends curling toward +dir. */
+const brace = (x1: number, x2: number, y: number, dir = 1, h = 6) => {
+  const m = (x1 + x2) / 2;
+  const d = h * dir;
+  return `M ${x1} ${y + d} Q ${x1} ${y}, ${x1 + h} ${y} L ${m - h} ${y} Q ${m} ${y}, ${m} ${y - d} Q ${m} ${y}, ${m + h} ${y} L ${x2 - h} ${y} Q ${x2} ${y}, ${x2} ${y + d}`;
+};
+
+// Step 1: dataset bar
+const bar = { y: 26, h: 34 };
+const seg = {
+  train: { x: 10, w: 288 },
+  cal: { x: 300, w: 138 },
+  val: { x: 440, w: 110 },
+};
+
+// Step 2: cached scores, aligned under calibration + validation
+const cellY = 72;
+const cellH = 24;
+const calCells = ['1', '2', '⋯', 'n'].map((sub, i, a) => ({
+  x: seg.cal.x + (i * seg.cal.w) / a.length,
+  w: seg.cal.w / a.length,
+  sub,
+}));
+const valWidths = [38, 20, 52];
+const valCells = ['n+1', '⋯', 'n+n_val'].map((sub, i) => ({
+  x: seg.val.x + valWidths.slice(0, i).reduce((a, b) => a + b, 0),
+  w: valWidths[i],
+  sub,
+}));
+
+// Two calibration examples: sorted softmax, true label at rank `rank`.
+const mini = { base: 250, bw: 18, gap: 4, scale: 180 };
+const examples = [
+  { x0: 30, probs: [0.39, 0.26, 0.23, 0.06, 0.04, 0.02], rank: 3, i: '1', from: calCells[0] },
+  { x0: 180, probs: [0.5, 0.41, 0.04, 0.03, 0.01, 0.01], rank: 2, i: '2', from: calCells[1] },
+].map((ex) => {
+  const bars = ex.probs.map((p, k) => ({
+    x: ex.x0 + k * (mini.bw + mini.gap),
+    h: p * mini.scale,
+    on: k < ex.rank,
+    truth: k === ex.rank - 1,
+  }));
+  const s = ex.probs.slice(0, ex.rank).reduce((a, b) => a + b, 0);
+  const top = mini.base - ex.probs[0] * mini.scale - 9;
+  const bx2 = bars[ex.rank - 1].x + mini.bw;
+  const cx = ex.x0 + (6 * (mini.bw + mini.gap) - mini.gap) / 2;
+  const sx = ex.from.x + ex.from.w / 2;
+  const sy = cellY + cellH + 2;
+  const ty = top - 36;
+  return {
+    ...ex,
+    bars,
+    s,
+    braceD: brace(ex.x0, bx2, top, 1),
+    braceMid: (ex.x0 + bx2) / 2,
+    braceTop: top,
+    width: 6 * (mini.bw + mini.gap) - mini.gap,
+    arrowD: `M ${sx} ${sy} C ${sx} ${sy + 30}, ${cx + 40} ${ty - 22}, ${cx} ${ty}`,
+  };
+});
+
+// Step 3: histogram of calibration scores
+const hist = { x0: 40, x1: 540, base: 370, maxH: 62, lo: 0.8, hi: 1.0, bins: 25 };
+const binW = (hist.hi - hist.lo) / hist.bins;
+const counts = Array.from({ length: hist.bins }, (_, b) =>
+  scores.filter((s) => s >= hist.lo + b * binW && (s < hist.lo + (b + 1) * binW || (b === hist.bins - 1 && s <= hist.hi))).length,
+);
+const maxCount = Math.max(...counts);
+const hx = (v: number) => hist.x0 + ((v - hist.lo) / (hist.hi - hist.lo)) * (hist.x1 - hist.x0);
+const histBars = counts.map((c, b) => {
+  const lo = hist.lo + b * binW;
+  return {
+    x: hx(lo) + 0.75,
+    w: hx(lo + binW) - hx(lo) - 1.5,
+    h: (c / maxCount) * hist.maxH,
+    below: lo + binW / 2 <= qhat,
+  };
+});
+const qx = hx(qhat);
+const ticks = [0.8, 0.85, 0.9, 0.95, 1.0];
+
+// Step 4: new input
+const nw = { base: 495, x0: 168, bw: 22, gap: 8, scale: 85 };
+const newProbs = [0.52, 0.28, 0.13, 0.04, 0.02, 0.01];
+const labels = ['cat', 'lynx', 'fox', 'dog', 'wolf', 'owl'];
+let cum = 0;
+const newBars = newProbs.map((p, k) => {
+  cum += p;
+  return {
+    x: nw.x0 + k * (nw.bw + nw.gap),
+    h: p * nw.scale,
+    cum,
+    cy: nw.base - cum * nw.scale,
+    in: cum <= qhat,
+    label: labels[k],
+  };
+});
+const setSize = newBars.filter((b) => b.in).length;
+const stepPath = newBars
+  .map((b, k) => `${k ? 'L' : 'M'} ${b.x - (k ? nw.gap / 2 : 0)} ${b.cy} L ${b.x + nw.bw + (k < newBars.length - 1 ? nw.gap / 2 : 0)} ${b.cy}`)
+  .join(' ');
+const qy = nw.base - qhat * nw.scale;
+const nwRight = nw.x0 + 6 * (nw.bw + nw.gap) - nw.gap;
+const setRight = newBars[setSize - 1].x + nw.bw;
+---
+
+<figure class="aps" data-step="1">
+  <ol class="steps">
+    {steps.map((s, i) => (
+      <li>
+        <button type="button" class="step" data-go={i + 1} aria-expanded={i === 0 ? 'true' : 'false'}>
+          <span class="num">{i + 1}</span>
+          <span class="title" set:html={s.title} />
+          <span class="plus" aria-hidden="true" />
+        </button>
+        <div class="body" set:html={s.body} />
+      </li>
+    ))}
+  </ol>
+
+  <div class="stage">
+    <svg viewBox="0 0 560 540" role="img" aria-label="Split conformal prediction with adaptive prediction sets, built up step by step">
+      <defs>
+        <marker id="aps-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 9 5 L 0 9 z" class="f-ink" />
+        </marker>
+      </defs>
+
+      {/* 1 · dataset */}
+      <g class="layer" data-layer="1">
+        <text x={seg.train.x + seg.train.w / 2} y="18" class="lbl c-train">train</text>
+        <text x={seg.cal.x + seg.cal.w / 2} y="18" class="lbl c-cal">calibration</text>
+        <text x={seg.val.x + seg.val.w / 2} y="18" class="lbl c-val">validation</text>
+
+        <rect x={seg.train.x} y={bar.y} width={seg.train.w} height={bar.h} rx="5" class="seg s-train" />
+        <rect x={seg.cal.x} y={bar.y} width={seg.cal.w} height={bar.h} rx="5" class="seg s-cal" />
+        <rect x={seg.val.x} y={bar.y} width={seg.val.w} height={bar.h} rx="5" class="seg s-val" />
+
+        <text x={seg.train.x + seg.train.w / 2} y={bar.y + 23} class="math big">N</text>
+        <text x={seg.cal.x + seg.cal.w / 2} y={bar.y + 23} class="math big">n</text>
+        <text x={seg.val.x + seg.val.w / 2} y={bar.y + 23} class="math big">n<tspan class="sub" dy="4">val</tspan></text>
+      </g>
+
+      {/* 2 · cached scores + two calibration examples */}
+      <g class="layer" data-layer="2">
+        <text x={seg.cal.x - 10} y={cellY + 16} class="cache">cache</text>
+        {calCells.map((c) => (
+          <g>
+            <rect x={c.x + 1} y={cellY} width={c.w - 2} height={cellH} rx="3" class="cell s-cal" />
+            {c.sub === '⋯'
+              ? <text x={c.x + c.w / 2} y={cellY + 16} class="math">⋯</text>
+              : <text x={c.x + c.w / 2} y={cellY + 16} class="math">S<tspan class="sub" dy="3">{c.sub}</tspan></text>}
+          </g>
+        ))}
+        {valCells.map((c) => (
+          <g>
+            <rect x={c.x + 1} y={cellY} width={c.w - 2} height={cellH} rx="3" class="cell s-val" />
+            {c.sub === '⋯'
+              ? <text x={c.x + c.w / 2} y={cellY + 16} class="math">⋯</text>
+              : c.sub === 'n+n_val'
+                ? <text x={c.x + c.w / 2} y={cellY + 16} class="math">S<tspan class="sub" dy="3">n+n</tspan><tspan class="subsub" dy="2">val</tspan></text>
+                : <text x={c.x + c.w / 2} y={cellY + 16} class="math">S<tspan class="sub" dy="3">{c.sub}</tspan></text>}
+          </g>
+        ))}
+
+        {examples.map((ex) => (
+          <g>
+            <path d={ex.arrowD} class="arrow" marker-end="url(#aps-arrow)" />
+            <line x1={ex.x0 - 4} x2={ex.x0 + ex.width + 4} y1={mini.base} y2={mini.base} class="axis" />
+            {ex.bars.map((b) => (
+              <rect x={b.x} y={mini.base - b.h} width={mini.bw} height={b.h} rx="1.5" class={b.on ? 'bar hl' : 'bar'} />
+            ))}
+            {ex.bars.filter((b) => b.truth).map((b) => (
+              <text transform={`translate(${b.x + mini.bw / 2 + 3} ${mini.base - 4}) rotate(-90)`} class="truth">true label</text>
+            ))}
+            <path d={ex.braceD} class="brace" />
+            <text x={ex.braceMid} y={ex.braceTop - 9} class="math sm">
+              s(X<tspan class="sub" dy="3">{ex.i}</tspan><tspan dy="-3">, Y</tspan><tspan class="sub" dy="3">{ex.i}</tspan><tspan dy="-3">) = {ex.s.toFixed(2)}</tspan>
+            </text>
+            <text x={ex.x0 + ex.width / 2} y={mini.base + 15} class="cap">sorted softmax of X<tspan class="sub" dy="3">{ex.i}</tspan></text>
+          </g>
+        ))}
+      </g>
+
+      {/* 3 · histogram and quantile */}
+      <g class="layer" data-layer="3">
+        <text x="10" y="296" class="cap start">histogram of S<tspan class="sub" dy="3">1</tspan><tspan dy="-3">, …, S</tspan><tspan class="sub" dy="3">n</tspan></text>
+        {histBars.map((b) => (
+          <rect x={b.x} y={hist.base - b.h} width={b.w} height={b.h} class={b.below ? 'hbar s-cal-solid' : 'hbar faint'} />
+        ))}
+        <line x1={hist.x0} x2={hist.x1} y1={hist.base} y2={hist.base} class="axis" />
+        {ticks.map((t) => (
+          <text x={hx(t)} y={hist.base + 14} class="tick">{t.toFixed(2)}</text>
+        ))}
+        <line x1={qx} x2={qx} y1={hist.base - hist.maxH - 12} y2={hist.base + 3} class="cut" />
+        <text x={qx} y={hist.base - hist.maxH - 17} class="math qlbl">q̂ = {qhat.toFixed(2)}</text>
+        <text x={qx - 8} y={hist.base - hist.maxH + 6} class="cap end">1 − α</text>
+        <text x={qx + 8} y={hist.base - hist.maxH + 6} class="cap start">α</text>
+      </g>
+
+      {/* 4 · prediction set for a new input */}
+      <g class="layer" data-layer="4">
+        <rect x="10" y={nw.base - 62} width="58" height="28" rx="5" class="box" />
+        <text x="39" y={nw.base - 43} class="math">x<tspan class="sub" dy="3">new</tspan></text>
+        <line x1="70" x2="94" y1={nw.base - 48} y2={nw.base - 48} class="arrow" marker-end="url(#aps-arrow)" />
+        <rect x="96" y={nw.base - 62} width="40" height="28" rx="5" class="box ink" />
+        <text x="116" y={nw.base - 43} class="math inv">f̂</text>
+        <line x1="138" x2={nw.x0 - 8} y1={nw.base - 48} y2={nw.base - 48} class="arrow" marker-end="url(#aps-arrow)" />
+
+        {newBars.map((b) => (
+          <rect x={b.x} y={nw.base - b.h} width={nw.bw} height={b.h} rx="1.5" class={b.in ? 'bar hl' : 'bar'} />
+        ))}
+        <line x1={nw.x0 - 6} x2={nwRight + 6} y1={nw.base} y2={nw.base} class="axis" />
+        <path d={stepPath} class="cum" />
+        {newBars.map((b) => (
+          <circle cx={b.x + nw.bw / 2} cy={b.cy} r="2.6" class={b.in ? 'dot in' : 'dot'} />
+        ))}
+        <line x1={nw.x0 - 12} x2={nwRight + 12} y1={qy} y2={qy} class="cut" />
+        <text x={nwRight + 18} y={qy + 4} class="math qlbl start">q̂</text>
+
+        {newBars.map((b) => (
+          <text x={b.x + nw.bw / 2} y={nw.base + 13} class={b.in ? 'cls in' : 'cls'}>{b.label}</text>
+        ))}
+        <path d={brace(nw.x0, setRight, nw.base + 21, -1)} class="brace" />
+        <text x={(nw.x0 + setRight) / 2} y={nw.base + 40} class="math sm">𝒞(x<tspan class="sub" dy="3">new</tspan><tspan dy="-3">) = {'{'}{newBars.filter((b) => b.in).map((b) => b.label).join(', ')}{'}'}</tspan></text>
+
+        <g class="legend" transform={`translate(392 ${nw.base - 80})`}>
+          <rect x="0" y="-8" width="10" height="10" rx="1.5" class="bar" />
+          <text x="16" y="1" class="cap start">sorted softmax</text>
+          <line x1="0" x2="10" y1="17" y2="17" class="cum" />
+          <text x="16" y="21" class="cap start">cumulative mass</text>
+          <line x1="0" x2="10" y1="37" y2="37" class="cut" />
+          <text x="16" y="41" class="cap start"><tspan class="math">q̂</tspan> from step 3</text>
+        </g>
+      </g>
+    </svg>
+
+    <div class="dots" role="tablist" aria-label="Step">
+      {steps.map((_, i) => (
+        <button type="button" class="dot-btn" data-go={i + 1} aria-label={`Step ${i + 1}`} />
+      ))}
+    </div>
+  </div>
+</figure>
+
+<style>
+  .aps {
+    --c-train: #2f5ea8;
+    --c-cal: #2d7d6f;
+    --c-val: #9a5bb5;
+    --c-hl: #f2c14e;
+    --c-hl-ink: #6b4e00;
+
+    display: grid;
+    grid-template-columns: minmax(200px, 0.75fr) minmax(0, 1.6fr);
+    gap: var(--space-6);
+    align-items: start;
+    margin: var(--space-8) 0;
+    font-family: var(--font-sans);
+  }
+
+  :global(:root[data-theme='dark']) .aps {
+    --c-train: #8ab4f8;
+    --c-cal: #5cc2ad;
+    --c-val: #c99be0;
+    --c-hl: #e3b341;
+    --c-hl-ink: #2a1f00;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .aps {
+      --c-train: #8ab4f8;
+      --c-cal: #5cc2ad;
+      --c-val: #c99be0;
+      --c-hl: #e3b341;
+      --c-hl-ink: #2a1f00;
+    }
+  }
+
+  /* ---- Step list ---- */
+
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .steps li + li {
+    border-top: 1px solid var(--border);
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 1.4em 1fr auto;
+    align-items: baseline;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-align: left;
+    color: var(--text);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .step:hover {
+    background: var(--bg-subtle);
+  }
+
+  .num {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .plus::before {
+    content: '+';
+    color: var(--text-faint);
+    font-weight: var(--weight-normal);
+  }
+
+  .step[aria-expanded='true'] .plus::before {
+    content: '−';
+  }
+
+  .body {
+    display: none;
+    padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 1.4em + var(--space-2));
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--text-muted);
+  }
+
+  .step[aria-expanded='true'] {
+    background: var(--bg-subtle);
+  }
+
+  .step[aria-expanded='true'] + .body {
+    display: block;
+    background: var(--bg-subtle);
+  }
+
+  .body :global(b) {
+    font-weight: var(--weight-semibold);
+  }
+  .body :global(.c-train) {
+    color: var(--c-train);
+  }
+  .body :global(.c-cal) {
+    color: var(--c-cal);
+  }
+  .body :global(.c-val) {
+    color: var(--c-val);
+  }
+
+  .c-train {
+    color: var(--c-train);
+    fill: var(--c-train);
+  }
+  .c-cal {
+    color: var(--c-cal);
+    fill: var(--c-cal);
+  }
+  .c-val {
+    color: var(--c-val);
+    fill: var(--c-val);
+  }
+
+  /* ---- Figure ---- */
+
+  .stage {
+    min-width: 0;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .layer {
+    opacity: 0;
+    transition: opacity 0.45s var(--ease);
+    pointer-events: none;
+  }
+
+  .layer.on {
+    opacity: 1;
+  }
+
+  text {
+    fill: var(--text);
+    text-anchor: middle;
+  }
+
+  .start {
+    text-anchor: start;
+  }
+  .end {
+    text-anchor: end;
+  }
+
+  .lbl {
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+
+  .math {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+  }
+  .math.big {
+    font-size: 19px;
+  }
+  .math.sm {
+    font-size: 13px;
+  }
+  .sub {
+    font-size: 0.72em;
+  }
+  .subsub {
+    font-size: 0.55em;
+  }
+
+  .seg {
+    stroke-width: 1.5;
+  }
+  .s-train {
+    fill: color-mix(in srgb, var(--c-train) 16%, transparent);
+    stroke: var(--c-train);
+  }
+  .s-cal {
+    fill: color-mix(in srgb, var(--c-cal) 16%, transparent);
+    stroke: var(--c-cal);
+  }
+  .s-val {
+    fill: color-mix(in srgb, var(--c-val) 16%, transparent);
+    stroke: var(--c-val);
+  }
+  .cell {
+    stroke-width: 1;
+  }
+  .s-cal-solid {
+    fill: color-mix(in srgb, var(--c-cal) 70%, transparent);
+  }
+
+  .cache {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    fill: var(--text-faint);
+    text-anchor: end;
+  }
+
+  .arrow {
+    fill: none;
+    stroke: var(--text-muted);
+    stroke-width: 1.2;
+  }
+  .f-ink {
+    fill: var(--text-muted);
+  }
+
+  .axis {
+    stroke: var(--border-strong);
+    stroke-width: 1;
+  }
+
+  .bar {
+    fill: var(--border-strong);
+  }
+  .bar.hl {
+    fill: var(--c-hl);
+  }
+  .truth {
+    font-size: 8.5px;
+    font-weight: 600;
+    fill: var(--c-hl-ink);
+    text-anchor: start;
+  }
+
+  .brace {
+    fill: none;
+    stroke: var(--text);
+    stroke-width: 1.2;
+  }
+
+  .cap {
+    font-size: 12px;
+    fill: var(--text-muted);
+  }
+  .tick {
+    font-size: 11.5px;
+    fill: var(--text-faint);
+  }
+
+  .hbar.faint {
+    fill: var(--border-strong);
+  }
+
+  .cut {
+    stroke: var(--text);
+    stroke-width: 1.3;
+    stroke-dasharray: 4 3;
+  }
+  .qlbl {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .box {
+    fill: var(--surface);
+    stroke: var(--border-strong);
+  }
+  .box.ink {
+    fill: var(--text);
+    stroke: var(--text);
+  }
+  .inv {
+    fill: var(--bg);
+    font-size: 15px;
+  }
+
+  .cum {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.6;
+  }
+  .dot {
+    fill: var(--surface);
+    stroke: var(--accent);
+    stroke-width: 1.4;
+  }
+  .dot.in {
+    fill: var(--accent);
+  }
+
+  .cls {
+    font-size: 11.5px;
+    fill: var(--text-faint);
+  }
+  .cls.in {
+    fill: var(--text);
+    font-weight: 600;
+  }
+
+  .dots {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+
+  .dot-btn {
+    width: 22px;
+    height: 4px;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: var(--border-strong);
+    cursor: pointer;
+  }
+
+  .dot-btn.on {
+    background: var(--accent);
+  }
+
+  @media (max-width: 760px) {
+    .aps {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .layer {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('.aps')) {
+    const layers = root.querySelectorAll<SVGGElement>('.layer');
+    const steps = root.querySelectorAll<HTMLButtonElement>('.step');
+    const dots = root.querySelectorAll<HTMLButtonElement>('.dot-btn');
+
+    const go = (n: number) => {
+      root.dataset.step = String(n);
+      layers.forEach((g) => g.classList.toggle('on', Number(g.dataset.layer) <= n));
+      steps.forEach((b) => b.setAttribute('aria-expanded', String(Number(b.dataset.go) === n)));
+      dots.forEach((d) => d.classList.toggle('on', Number(d.dataset.go) <= n));
+    };
+
+    root.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-go]');
+      if (btn && root.contains(btn)) go(Number(btn.dataset.go));
+    });
+
+    go(1);
+  }
+</script>

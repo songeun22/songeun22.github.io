@@ -307,6 +307,44 @@ button {
   margin-top: var(--space-2);
 }
 
+/* Markdown footnotes ([^id]): small grey notes under a short rule. */
+.prose .footnotes {
+  margin-top: var(--space-12);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-faint);
+}
+
+.prose .footnotes::before {
+  content: '';
+  display: block;
+  width: 8rem;
+  margin-bottom: var(--space-3);
+  border-top: 1px solid var(--border-strong);
+}
+
+.prose .footnotes ol {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.prose .footnotes li + li {
+  margin-top: var(--space-1);
+}
+
+.prose .footnotes p {
+  margin: 0;
+}
+
+.prose [data-footnote-ref] {
+  text-decoration: none;
+}
+
+.prose .data-footnote-backref {
+  text-decoration: none;
+  color: var(--text-faint);
+}
+
 .eyebrow {
   font-family: var(--font-sans);
   font-size: var(--text-xs);
@@ -316,7 +354,8 @@ button {
   color: var(--text-faint);
 }
 
-.visually-hidden {
+.visually-hidden,
+.sr-only {
   position: absolute;
   width: 1px;
   height: 1px;

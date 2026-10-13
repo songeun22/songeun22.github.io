@@ -1,0 +1,23 @@
+---
+title: Algorithm
+description: The general split conformal algorithm, starting from adaptive prediction sets for classification, with application examples.
+order: 1
+---
+
+import ApsSteps from '../../../../components/demos/ApsSteps.astro';
+
+A standard conformal prediction procedure starts from a supervised dataset, i.e., data with labels. We denote it by $\mathcal D = \{(X_i, Y_i)\}_{i=1}^{N} \in (\mathcal X \times \mathcal Y)^N$. Given a black-box model $\hat f$, we also start from <mark>some heuristic notion of uncertainty, which we call the **score function**</mark>. For example, the score can simply be the softmax score of a classification model, or the residual if we are doing regression.
+
+For simplicity, let us start with the **Adaptive Prediction Sets** (APS) algorithm, which is best known for the discrete case, i.e., $\mathcal Y = \{1, \dots, K\}$. Here, we set the score function as
+
+$$
+s(x, y) = \sum_{k=1}^{K} \hat\pi_k(x)\, \mathbf{1}\{\hat\pi_k(x) \ge \hat\pi_y(x)\},
+$$
+
+where $\hat\pi_k(x)$ is the softmax output of $\hat f$ for class $k$, and $y \in \mathcal Y$ denotes the true label of $x$. In other words, the score function indicates how difficult it is, for a given input, to guess its label correctly.[^adaptive]
+
+## Adaptive prediction sets
+
+<ApsSteps />
+
+[^adaptive]: The score is defined this way in order to satisfy *adaptiveness*.
