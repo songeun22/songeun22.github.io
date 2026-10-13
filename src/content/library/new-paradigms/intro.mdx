@@ -1,6 +1,6 @@
 ---
 title: Intro
-description: Loosening classical assumptions until a model can be treated as a black box.
+description: Loosening classical assumptions until a model can be treated as a black box, and the sources this volume is built on.
 order: 1
 ---
 
@@ -8,6 +8,26 @@ Classical statistics leans on strong assumptions, a known model family, correct 
 
 Push that far enough and you end up willing to treat a model as one black box machine, no promises about what's inside, no guarantee it's the "right" model for anything. The question this book actually starts from is what's left to say once you've given that up: how do you still get theoretically grounded statistics out of a system you're not allowed to look inside?
 
-Conformal prediction and the martingale posterior are two different answers to that question, and this book works through both.
+This first volume follows one answer to that question, **conformal prediction**, and the line of work that grew out of it: from prediction sets with a coverage guarantee, to *learn then test*, to controlling a general risk rather than just miscoverage.
 
-**TODO**, this is still just the intro. Next up: building out the conformal prediction track, then the martingale posterior track.
+> **Where this is going**
+> First, *why conformal prediction* at all, and the general algorithm worked through on an example. Then *beyond CP*, where I lay out the limitations I see and where I think the research should go next. The rest of the book is paper reviews: [Learn then Test](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-19/issue-2/Learn-then-test--Calibrating-predictive-algorithms-to-achieve-risk/10.1214/24-AOAS1998.full), then [risk-controlling prediction sets](https://arxiv.org/abs/2101.02703), and finally [conformal risk control](https://arxiv.org/abs/2208.02814) together with [conformal policy control](https://arxiv.org/abs/2603.02196), looking at how these get applied in ML and decision making.
+
+## References
+
+Unlike the other books on this shelf, this one is built around papers, so the sources come first.
+
+### Foundations
+
+- Anastasios N. Angelopoulos, Rina Foygel Barber, Stephen Bates. [*Theoretical Foundations of Conformal Prediction*](https://arxiv.org/abs/2411.11824). arXiv:2411.11824, 2024.
+- Anastasios N. Angelopoulos, Stephen Bates. [*A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification*](https://arxiv.org/abs/2107.07511). arXiv:2107.07511, 2021.
+- [*A Tutorial on Conformal Prediction*](https://www.youtube.com/watch?v=nql000Lu_iE). YouTube.
+
+### Papers reviewed
+
+- **[Review 1]** Anastasios N. Angelopoulos, Stephen Bates, Emmanuel J. Candès, Michael I. Jordan, Lihua Lei. [*Learn then Test: Calibrating Predictive Algorithms to Achieve Risk Control*](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-19/issue-2/Learn-then-test--Calibrating-predictive-algorithms-to-achieve-risk/10.1214/24-AOAS1998.full). *The Annals of Applied Statistics* 19(2), 2025. ([arXiv:2110.01052](https://arxiv.org/abs/2110.01052))
+- **[Review 2]** Stephen Bates, Anastasios N. Angelopoulos, Lihua Lei, Jitendra Malik, Michael I. Jordan. [*Distribution-Free, Risk-Controlling Prediction Sets*](https://arxiv.org/abs/2101.02703). arXiv:2101.02703, 2021.
+- **[Review 3]** Anastasios N. Angelopoulos, Stephen Bates, Adam Fisch, Lihua Lei, Tal Schuster. [*Conformal Risk Control*](https://arxiv.org/abs/2208.02814). arXiv:2208.02814, 2022.
+- **[Review 3]** Drew Prinster, Clara Fannjiang, Ji Won Park, Kyunghyun Cho, Anqi Liu, Suchi Saria, Samuel Stanton. [*Conformal Policy Control*](https://arxiv.org/abs/2603.02196). arXiv:2603.02196, 2026.
+
+TODO, add more as the book grows.
