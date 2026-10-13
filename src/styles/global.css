@@ -253,7 +253,8 @@ button {
 
 .prose h2 {
   font-family: var(--font-sans);
-  font-size: var(--text-2xl);
+  /* A step below the page title (--text-3xl) so sections read as sections. */
+  font-size: 1.75rem;
   margin-top: var(--space-16);
 }
 
