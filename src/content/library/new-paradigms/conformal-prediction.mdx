@@ -4,4 +4,66 @@ description: Why a distribution-free, finite-sample guarantee for a black-box mo
 order: 2
 ---
 
-**TODO chapter.** Motivation: why conformal prediction.
+import Criterion from '../../../components/Criterion.astro';
+
+Conformal prediction itself is not a new idea of the 2020s. It goes back to Vovk, Gammerman, and Shafer around the turn of the millennium.[^history] However, with the incredible growth of ML and computational resources, and the growing recognition that machines can be badly *overconfident*, distribution-free prediction has become one of the most important fields in statistics.
+
+The idea starts from a simple wish. For a test input $X_{\text{new}}$, construct a prediction set $\mathcal C(X_{\text{new}})$ that contains the true label with a probability we choose:
+
+$$
+\mathbb P\big(Y_{\text{new}} \in \mathcal C(X_{\text{new}})\big) \ge 1-\alpha.
+$$
+
+And the only thing we assume is that the calibration data and the test point are *exchangeable*, e.g., i.i.d. No assumption on the model, and none on the data distribution.
+
+## What we want from a prediction set
+
+In a more sophisticated sense, we want a CP algorithm to satisfy the three conditions below.
+
+<Criterion name="Validity">
+
+$$
+\mathbb P\big(Y_{\text{new}} \in \mathcal C(X_{\text{new}})\big) \ge 1-\alpha
+$$
+
+<div slot="note">The prediction set must contain the true label with probability at least $1-\alpha$, marginally over new observations (and the calibration data).</div>
+</Criterion>
+
+<Criterion name="Efficiency">
+
+$$
+\min \ \mathbb E\,|\mathcal C(X)| \quad \text{subject to validity}
+$$
+
+<div slot="note">The prediction set must not be overly conservative. If it just gives you the whole label set, validity holds trivially, but what's the point?</div>
+</Criterion>
+
+<Criterion name="Adaptivity">
+
+$$
+\mathbb P\big(Y \in \mathcal C(X) \mid X = x\big) \approx 1-\alpha \quad \text{for every } x
+$$
+
+<div slot="note">The prediction set itself must adapt to the difficulty of the prediction, i.e., a harder prediction should give you a larger set.</div>
+</Criterion>
+
+## Why *conformal*?
+
+So why is it called ***conformal*** prediction? It's because, when constructing the set, we measure how *nonconforming* a candidate label is: how strange the pair $(x, y)$ looks compared with the calibration data and their ground-truth labels. That measure is exactly the score function from the next page, which is why it's also called a **nonconformity score**. A candidate label makes it into the set only if it conforms to the calibration data well enough:
+
+$$
+\mathcal C(x) = \{\, y : s(x, y) \le \hat q \,\}.
+$$
+
+## Problems & considerations
+
+So, despite its simple and elegant framework, conformal prediction raises a few fundamental questions:
+
+- **Does marginal coverage really capture predictive uncertainty?** Can prediction sets reflect how difficult or uncertain each individual prediction is?
+- **How much does CP depend on the underlying model and nonconformity score?** Can CP recognize whether the model or score function is actually informative, or does it simply calibrate whatever is given?
+- **Can we extend the guarantee beyond coverage?** What if we want to control other types of prediction errors or risks, rather than just the probability of including the true label?
+- **How robust are these guarantees in practice?** Do they still hold when test data differ from calibration data?
+
+These questions motivate many extensions of conformal prediction, from adaptive prediction sets and improved calibration methods to conformal risk control and distribution-shift-aware inference.
+
+[^history]: Vladimir Vovk, Alex Gammerman, Glenn Shafer. *Algorithmic Learning in a Random World*. Springer, 2005.

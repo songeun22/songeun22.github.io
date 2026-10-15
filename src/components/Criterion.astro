@@ -1,0 +1,61 @@
+---
+/**
+ * One named requirement, centered: a bold name, a formula (default slot),
+ * and a small grey italic note (`note` slot) underneath.
+ *
+ * Any $$...$$ in the default slot needs the delimiters on their own lines,
+ * same as TheoremBox.
+ */
+interface Props {
+  name: string;
+}
+
+const { name } = Astro.props;
+---
+
+<div class="criterion">
+  <p class="name">{name}</p>
+  <div class="formula">
+    <slot />
+  </div>
+  {Astro.slots.has('note') && (
+    <div class="note">
+      <slot name="note" />
+    </div>
+  )}
+</div>
+
+<style>
+  .criterion {
+    margin: var(--space-6) auto;
+    max-width: 52ch;
+    text-align: center;
+  }
+
+  .criterion + .criterion {
+    margin-top: var(--space-8);
+  }
+
+  .name {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-base);
+  }
+
+  .formula :global(p),
+  .formula :global(.katex-display) {
+    margin: var(--space-2) 0;
+  }
+
+  .note {
+    font-size: var(--text-sm);
+    font-style: italic;
+    line-height: var(--leading-snug);
+    color: var(--text-faint);
+  }
+
+  .note :global(p) {
+    margin: 0;
+  }
+</style>
