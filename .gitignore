@@ -22,3 +22,9 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Library books kept local only (not published)
+src/content/books/causal-inference.json
+src/content/books/prob-graph-learning.json
+src/content/books/high-dimensional-statistics.json
+src/content/library/high-dimensional-statistics/

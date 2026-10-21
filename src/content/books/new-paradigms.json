@@ -1,9 +1,9 @@
 {
   "title": "New Paradigms in Modern Statistics I",
-  "subtitle": "Conformal prediction, learn-then-test, and risk control",
-  "description": "Distribution-free inference for black-box models: conformal prediction, its limitations, and a review of learn-then-test, risk-controlling prediction sets, and conformal risk/policy control.",
+  "subtitle": "Conformal prediction and risk control",
+  "description": "Distribution-free inference for black-box models: conformal prediction, its theory and limitations, and a review of conformal risk control.",
   "order": 3,
   "color": "#2d7d6f",
   "status": "in-progress",
-  "updated": "2026-10-13"
+  "updated": "2026-10-21"
 }

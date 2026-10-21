@@ -1,7 +1,74 @@
 ---
 title: Fundamentals
-description: The theorems underneath conformal prediction.
+description: Why a quantile of the nonconformity scores guarantees coverage, and what that guarantee does and does not promise.
 order: 2
 ---
 
-**TODO chapter.** The underlying theorems.
+import TheoremBox from '../../../../components/TheoremBox.astro';
+import CqrFigure from '../../../../components/demos/CqrFigure.astro';
+
+Now, the question is: how can the conformal prediction algorithm guarantee coverage, i.e.,
+
+$$
+\mathbb P\big(Y_{\text{new}} \in \mathcal C(X_{\text{new}})\big) \ge 1-\alpha \,?
+$$
+
+The point of the theory is in choosing the threshold as a quantile of the nonconformity scores. The intuition is simple. Suppose the scores $\{s(X_i, Y_i)\}_{i=1}^{n}$ and $S_{\text{new}} = s(X_{\text{new}}, Y_{\text{new}})$ are exchangeable. Then we can think of the real line split into $n+1$ slots by the $n$ calibration scores. With exchangeability, the probability that the new score $S_{\text{new}}$ lands in each slot is equal. Written mathematically:
+
+<TheoremBox kind="Lemma" name="Quantile">
+
+Let $S_{(k)}$ denote the $k$-th smallest of the calibration scores. Then for any $k \in \{1, \dots, n\}$ we have
+
+$$
+\mathbb P\big(S_{\text{new}} \le S_{(k)}\big) \ge \frac{k}{n+1},
+$$
+
+with equality if the scores have no ties.
+
+</TheoremBox>
+
+Choosing $k = \lceil (n+1)(1-\alpha) \rceil$ gives exactly the $\hat q = S_{(k)}$ from the [algorithm](/library/new-paradigms/conformal-prediction/algorithm), and since $Y_{\text{new}} \in \mathcal C(X_{\text{new}}) \iff S_{\text{new}} \le \hat q$, we get the coverage guarantee:
+
+<TheoremBox kind="Theorem" name="Coverage">
+
+If the scores are exchangeable, then
+
+$$
+1-\alpha \le \mathbb P\big(Y_{\text{new}} \in \mathcal C(X_{\text{new}})\big) \le 1-\alpha+\frac{1}{n+1},
+$$
+
+where the upper bound holds when the scores have no ties.
+
+</TheoremBox>
+
+Note that this is a **finite-sample** guarantee. It holds for every $n$, with no asymptotics and no assumption on the model or the data distribution beyond exchangeability.
+
+---
+
+## Example: CQR
+
+Now we can think of applying conformal prediction to continuous outputs, too. The best example is [conformalized quantile regression](https://arxiv.org/abs/1905.03222) (CQR) by Romano, Patterson, and Candès (2019), as presented in [Angelopoulos & Bates](https://arxiv.org/abs/2107.07511). Quantile regression estimates the interval $[\hat t_{\alpha/2}(x),\ \hat t_{1-\alpha/2}(x)]$ aiming at $1-\alpha$ coverage, but it might actually fail the guarantee due to estimation noise and model misspecification. Setting the nonconformity score as the signed distance to the estimated quantiles,
+
+$$
+s(x, y) = \max\big\{\hat t_{\alpha/2}(x) - y,\ \ y - \hat t_{1-\alpha/2}(x)\big\},
+$$
+
+we get the prediction set
+
+$$
+\mathcal C(x) = \big[\hat t_{\alpha/2}(x) - \hat q,\ \ \hat t_{1-\alpha/2}(x) + \hat q\big].
+$$
+
+<CqrFigure />
+
+However, the critical point to note is that the conformal prediction interval guarantees the *marginal* coverage,[^beta] not the *conditional* coverage
+
+$$
+\mathbb P\big(Y \in \mathcal C(X) \mid X = x\big) \ge 1-\alpha \quad \text{for every } x.
+$$
+
+Intuitively, we may need $\hat q(x)$, a threshold that depends on $x$, for conditional coverage, while CQR uses one $\hat q$ for every $x$. In fact, exact distribution-free conditional coverage is impossible in general.[^conditional]
+
+[^beta]: Marginal over the calibration set, too. For one fixed calibration set and without ties, the coverage follows $\mathrm{Beta}(k,\ n+1-k)$ with $k = \lceil (n+1)(1-\alpha) \rceil$, so it concentrates around $1-\alpha$ as $n$ grows. See Vladimir Vovk, [*Conditional validity of inductive conformal predictors*](https://arxiv.org/abs/1209.2673), ACML 2012.
+
+[^conditional]: Vovk (2012); Jing Lei, Larry Wasserman, [*Distribution-free prediction bands for non-parametric regression*](https://doi.org/10.1111/rssb.12021), JRSS-B 2014; Rina Foygel Barber, Emmanuel J. Candès, Aaditya Ramdas, Ryan J. Tibshirani, [*The limits of distribution-free conditional predictive inference*](https://arxiv.org/abs/1903.04684), Information and Inference 2021.

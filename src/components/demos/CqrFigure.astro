@@ -1,0 +1,190 @@
+---
+/**
+ * Static sketch of conformalized quantile regression: two estimated
+ * quantile curves, widened by q-hat on each side into the prediction band.
+ * Redrawn after the CQR figure in Angelopoulos & Bates (2021).
+ *
+ * All geometry is computed at build time; no client script.
+ */
+
+// Plot area in SVG units
+const P = { x0: 46, x1: 430, y0: 18, y1: 236 };
+const yMin = 0.1;
+const yMax = 0.98;
+const X = (t: number) => P.x0 + t * (P.x1 - P.x0);
+const Y = (v: number) => P.y1 - ((v - yMin) / (yMax - yMin)) * (P.y1 - P.y0);
+
+// A step in the middle, and noise that grows with x.
+const center = (t: number) => 0.3 + 0.32 / (1 + Math.exp(-14 * (t - 0.5))) + 0.08 * Math.sin(5 * t);
+const halfWidth = (t: number) => 0.05 + 0.13 * t;
+const qhat = 0.075;
+
+const lo = (t: number) => center(t) - halfWidth(t);
+const hi = (t: number) => center(t) + halfWidth(t);
+
+const ts = Array.from({ length: 121 }, (_, i) => i / 120);
+const path = (f: (t: number) => number) =>
+  ts.map((t, i) => `${i ? 'L' : 'M'} ${X(t).toFixed(1)} ${Y(f(t)).toFixed(1)}`).join(' ');
+
+const bandD =
+  ts.map((t, i) => `${i ? 'L' : 'M'} ${X(t).toFixed(1)} ${Y(hi(t) + qhat).toFixed(1)}`).join(' ') +
+  ' ' +
+  [...ts].reverse().map((t) => `L ${X(t).toFixed(1)} ${Y(lo(t) - qhat).toFixed(1)}`).join(' ') +
+  ' Z';
+
+// Deterministic scatter: mostly inside the quantile band, a few just outside.
+let seed = 3;
+const rand = () => ((seed = (seed * 16807) % 2147483647), seed / 2147483647);
+const gauss = () => Math.sqrt(-2 * Math.log(rand() + 1e-12)) * Math.cos(2 * Math.PI * rand());
+const points = Array.from({ length: 70 }, () => {
+  const t = 0.02 + 0.96 * rand();
+  const y = center(t) + gauss() * halfWidth(t) * 0.62;
+  return { x: X(t), y: Y(y) };
+});
+
+// q-hat markers at the right end
+const tEnd = 0.97;
+const xq = X(tEnd);
+---
+
+<figure class="cqr">
+  <svg viewBox="0 0 520 268" role="img" aria-label="Estimated lower and upper quantile curves, widened by q-hat on each side into the conformal prediction band">
+    <path d={bandD} class="band" />
+    <path d={path((t) => hi(t) + qhat)} class="edge" />
+    <path d={path((t) => lo(t) - qhat)} class="edge" />
+
+    {points.map((p) => <circle cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="2" class="pt" />)}
+
+    <path d={path(hi)} class="qr" />
+    <path d={path(lo)} class="qr" />
+
+    <line x1={xq} x2={xq} y1={Y(hi(tEnd))} y2={Y(hi(tEnd) + qhat)} class="q" />
+    <line x1={xq} x2={xq} y1={Y(lo(tEnd))} y2={Y(lo(tEnd) - qhat)} class="q" />
+    <text x={xq - 6} y={(Y(hi(tEnd)) + Y(hi(tEnd) + qhat)) / 2 + 4} class="math qlbl end">q̂</text>
+    <text x={xq - 6} y={(Y(lo(tEnd)) + Y(lo(tEnd) - qhat)) / 2 + 4} class="math qlbl end">q̂</text>
+
+    <text x={X(1) + 8} y={Y(hi(1)) + 4} class="math lbl">t̂<tspan class="sub" dy="3">1−α/2</tspan><tspan dy="-3">(x)</tspan></text>
+    <text x={X(1) + 8} y={Y(lo(1)) + 4} class="math lbl">t̂<tspan class="sub" dy="3">α/2</tspan><tspan dy="-3">(x)</tspan></text>
+
+    <g class="legend" transform={`translate(${P.x0 + 14} ${P.y0 + 6})`}>
+      <rect x="0" y="-7" width="14" height="10" rx="2" class="band edge" />
+      <text x="20" y="2" class="cap">prediction set 𝒞(x)</text>
+      <line x1="0" x2="14" y1="16" y2="16" class="qr" />
+      <text x="20" y="20" class="cap">quantile regression</text>
+    </g>
+
+    <line x1={P.x0} x2={P.x0} y1={P.y0} y2={P.y1} class="axis" />
+    <line x1={P.x0} x2={P.x1 + 6} y1={P.y1} y2={P.y1} class="axis" />
+    <text x={(P.x0 + P.x1) / 2} y={P.y1 + 24} class="math axlbl">x</text>
+    <text x={P.x0 - 16} y={(P.y0 + P.y1) / 2} class="math axlbl">y</text>
+  </svg>
+  <figcaption>
+    Conformalized quantile regression. The grey curves are the estimated quantiles; the conformal band
+    adds <span class="m">q̂</span> on both sides. Redrawn after Angelopoulos &amp; Bates (2021).
+  </figcaption>
+</figure>
+
+<style>
+  .cqr {
+    --c-q: #d0574f;
+    margin: var(--space-8) auto;
+    max-width: 560px;
+  }
+
+  :global(:root[data-theme='dark']) .cqr {
+    --c-q: #f08a82;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .cqr {
+      --c-q: #f08a82;
+    }
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .band {
+    fill: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+
+  .edge {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.8;
+  }
+
+  .band.edge {
+    fill: color-mix(in srgb, var(--accent) 12%, transparent);
+    stroke-width: 1.2;
+  }
+
+  .qr {
+    fill: none;
+    stroke: var(--text-faint);
+    stroke-width: 1.6;
+  }
+
+  .pt {
+    fill: var(--text-muted);
+    opacity: 0.45;
+  }
+
+  .q {
+    stroke: var(--c-q);
+    stroke-width: 2;
+    stroke-dasharray: 3 2.5;
+  }
+
+  .axis {
+    stroke: var(--text);
+    stroke-width: 1.4;
+  }
+
+  text {
+    fill: var(--text);
+  }
+
+  .math {
+    font-family: var(--font-serif);
+    font-style: italic;
+  }
+
+  .lbl {
+    font-size: 13px;
+    fill: var(--text-muted);
+  }
+
+  .qlbl {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--c-q);
+  }
+
+  .axlbl {
+    font-size: 18px;
+    text-anchor: middle;
+  }
+
+  .end {
+    text-anchor: end;
+  }
+
+  .sub {
+    font-size: 0.72em;
+  }
+
+  .m {
+    font-family: var(--font-serif);
+    font-style: italic;
+  }
+
+  .cap {
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    fill: var(--text-muted);
+  }
+</style>

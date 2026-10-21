@@ -8,16 +8,17 @@
  * and it won't center.
  */
 interface Props {
-  kind: string;
+  /** Omit for a plain box with no label line. */
+  kind?: string;
   name?: string;
 }
 
 const { kind, name } = Astro.props;
-const label = name ? `${name} ${kind}` : kind;
+const label = kind ? (name ? `${name} ${kind}` : kind) : undefined;
 ---
 
 <div class="theorem-box">
-  <p class="label">{label}</p>
+  {label && <p class="label">{label}</p>}
   <div class="body">
     <slot />
   </div>
@@ -27,8 +28,8 @@ const label = name ? `${name} ${kind}` : kind;
   .theorem-box {
     margin: var(--space-8) 0;
     padding: var(--space-6);
-    background: var(--accent-subtle);
-    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
   }
 
