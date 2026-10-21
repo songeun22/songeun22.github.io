@@ -235,7 +235,7 @@ const hasPhoto = existsSync(join(process.cwd(), 'public', site.photo));
   }
 
   // Touch screens have no hover: a tap flips the card instead.
-  if (matchMedia('(hover: none)').matches) {
+  if (!matchMedia('(hover: hover)').matches) {
     document.querySelector('.flip')?.addEventListener('click', (e) => {
       (e.currentTarget as HTMLElement).classList.toggle('flipped');
     });
@@ -371,10 +371,17 @@ const hasPhoto = existsSync(join(process.cwd(), 'public', site.photo));
     transition: transform 0.7s var(--ease);
   }
 
-  .flip:hover .flip-inner,
   .flip:focus-visible .flip-inner,
   .flip.flipped .flip-inner {
     transform: rotateY(180deg);
+  }
+
+  /* Hover only where hover is real. On touch screens :hover sticks after a
+     tap, which would keep the card flipped; there a tap toggles instead. */
+  @media (hover: hover) {
+    .flip:hover .flip-inner {
+      transform: rotateY(180deg);
+    }
   }
 
   .face {
