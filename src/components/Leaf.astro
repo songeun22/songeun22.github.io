@@ -1,0 +1,39 @@
+---
+/** The site's leaf mark, same drawing as the favicon. Sized by `size`. */
+interface Props {
+  size?: number;
+}
+
+const { size = 26 } = Astro.props;
+---
+
+<svg class="leaf-mark" viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+  <path class="leaf" d="M27 5C14.5 5 6 11.5 6 20.5c0 2.6.8 4.8 2.2 6.3C18 26.8 27 19.5 27 5Z" />
+  <path class="vein" d="M8.6 25.4C12.5 19.5 17 14.5 22.5 10" />
+  <path class="stem" d="M8.2 26.8 5 30" />
+</svg>
+
+<style>
+  .leaf-mark {
+    display: block;
+    flex: none;
+  }
+
+  .leaf {
+    fill: var(--accent-fill);
+  }
+
+  .vein {
+    fill: none;
+    stroke: var(--bg);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+  }
+
+  .stem {
+    fill: none;
+    stroke: var(--accent-fill);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+</style>

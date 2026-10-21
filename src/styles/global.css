@@ -8,6 +8,10 @@
   /* Type families */
   --font-sans: 'Inter Variable', system-ui, -apple-system, sans-serif;
   --font-serif: 'Source Serif 4 Variable', Georgia, serif;
+  /* Headings only (h1, h2, brand). Latin only: Hangul falls back. */
+  --font-display: 'Cairo Play Variable', var(--font-sans);
+  /* Running text: Inter at a light weight. */
+  --weight-body: 300;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
 
   /* Type scale, matched to Transformer Explainer. Its root is 17px, so
@@ -27,6 +31,7 @@
   --leading-snug: 1.4;
   --leading-normal: 1.6;
 
+  --weight-light: 300;
   --weight-normal: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -59,20 +64,23 @@
 /* Light theme (default) */
 :root,
 :root[data-theme='light'] {
-  --bg: #fdfdfc;
-  --bg-subtle: #f5f5f3;
+  --bg: #fcfdfc;
+  --bg-subtle: #f3f7f5;
   --surface: #ffffff;
-  --border: #e4e4e0;
-  --border-strong: #cfcfc8;
+  --border: #e1e8e4;
+  --border-strong: #c9d4ce;
 
-  --text: #1a1a18;
-  --text-muted: #5c5c56;
-  --text-faint: #8f8f88;
+  --text: #18201c;
+  --text-muted: #56615b;
+  --text-faint: #87918c;
 
-  --accent: #2f5ea8;
-  --accent-hover: #23477f;
-  --accent-subtle: #eaf0fa;
-  --highlight: #fdf3d0;
+  /* Fresh mint. --accent is the text-safe shade (links, labels);
+     --accent-fill is the brighter one for buttons and solid marks. */
+  --accent: #2f7f66;
+  --accent-fill: #46a283;
+  --accent-hover: #236a54;
+  --accent-subtle: #e8f6f0;
+  --highlight: #d3ede2;
 
   /* Unwritten books on the shelf. The ink is dark enough to clear 4.5:1
      against the spine — a planned book is quiet, not unreadable. */
@@ -85,46 +93,48 @@
 /* Dark theme — follows the OS by default, overridden by the toggle */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #14141a;
-    --bg-subtle: #1c1c24;
-    --surface: #1e1e27;
-    --border: #2e2e3a;
-    --border-strong: #43434f;
+    --bg: #0f1513;
+    --bg-subtle: #151d1a;
+    --surface: #18211e;
+    --border: #24302b;
+    --border-strong: #36453f;
 
-    --text: #e8e8e3;
-    --text-muted: #a3a3a0;
-    --text-faint: #74747a;
+    --text: #e4ebe7;
+    --text-muted: #a0aea7;
+    --text-faint: #6e7c76;
 
-    --accent: #8ab4f8;
-    --accent-hover: #a9c8fa;
-    --accent-subtle: #1e2a3f;
-    --highlight: #3d3620;
+    --accent: #7fd1b1;
+    --accent-fill: #3f9a7b;
+    --accent-hover: #a5e2ca;
+    --accent-subtle: #16302a;
+    --highlight: #21453a;
 
-    --book-grey: #33333f;
-    --book-grey-ink: #9b9ba5;
+    --book-grey: #2c3632;
+    --book-grey-ink: #95a39d;
 
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.4);
   }
 }
 
 :root[data-theme='dark'] {
-  --bg: #14141a;
-  --bg-subtle: #1c1c24;
-  --surface: #1e1e27;
-  --border: #2e2e3a;
-  --border-strong: #43434f;
+  --bg: #0f1513;
+  --bg-subtle: #151d1a;
+  --surface: #18211e;
+  --border: #24302b;
+  --border-strong: #36453f;
 
-  --text: #e8e8e3;
-  --text-muted: #a3a3a0;
-  --text-faint: #74747a;
+  --text: #e4ebe7;
+  --text-muted: #a0aea7;
+  --text-faint: #6e7c76;
 
-  --accent: #8ab4f8;
-  --accent-hover: #a9c8fa;
-  --accent-subtle: #1e2a3f;
-  --highlight: #3d3620;
+  --accent: #7fd1b1;
+  --accent-fill: #3f9a7b;
+  --accent-hover: #a5e2ca;
+  --accent-subtle: #16302a;
+  --highlight: #21453a;
 
-  --book-grey: #33333f;
-  --book-grey-ink: #9b9ba5;
+  --book-grey: #2c3632;
+  --book-grey-ink: #95a39d;
 
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.4);
 }
@@ -157,6 +167,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
+  font-weight: var(--weight-body);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
@@ -205,6 +216,50 @@ h4 {
   text-wrap: balance;
 }
 
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-palette: --mint;
+  letter-spacing: -0.01em;
+}
+
+/* Cairo Play is a colour font: the dots on i and j come in red by default.
+   Repaint them in the theme's mint. Palettes can't read CSS variables, so
+   dark mode gets its own. */
+@font-palette-values --mint {
+  font-family: 'Cairo Play Variable';
+  override-colors: 0 #46a283, 1 #46a283, 2 #46a283, 3 #46a283;
+}
+
+@font-palette-values --mint-dark {
+  font-family: 'Cairo Play Variable';
+  override-colors: 0 #7fd1b1, 1 #7fd1b1, 2 #7fd1b1, 3 #7fd1b1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) h1,
+  :root:not([data-theme='light']) h2,
+  :root:not([data-theme='light']) .display {
+    font-palette: --mint-dark;
+  }
+}
+
+:root[data-theme='dark'] h1,
+:root[data-theme='dark'] h2,
+:root[data-theme='dark'] .display {
+  font-palette: --mint-dark;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-palette: --mint;
+}
+
+strong,
+b {
+  font-weight: var(--weight-semibold);
+}
+
 code,
 pre,
 kbd {
@@ -243,7 +298,7 @@ button {
 
 .prose {
   max-width: var(--measure);
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--text-base);
 }
 
@@ -252,7 +307,6 @@ button {
 }
 
 .prose h2 {
-  font-family: var(--font-sans);
   /* A step below the page title (--text-3xl) so sections read as sections. */
   font-size: 1.75rem;
   margin-top: var(--space-16);

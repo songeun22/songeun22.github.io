@@ -15,6 +15,9 @@ export const site = {
   email: 'songeun22@snu.ac.kr',
   /** Path inside /public. Swap for a real photo whenever you like. */
   avatar: '/avatar.png',
+  /** Real photo inside /public, shown on the front of the home page's
+   *  flip card (memoji on the back). Missing file = memoji only. */
+  photo: 'photo.jpg',
   cv: '/cv.pdf',
 };
 

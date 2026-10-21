@@ -1,6 +1,7 @@
 ---
 import { nav, site } from '../site.config';
 import ThemeToggle from './ThemeToggle.astro';
+import Leaf from './Leaf.astro';
 
 const path = Astro.url.pathname;
 
@@ -13,7 +14,11 @@ function isActive(href: string) {
 
 <header>
   <div class="bar">
-    <a class="brand" href="/">{site.name}</a>
+    {/* Home already shows the name large, so the bar carries only the leaf. */}
+    <a class="brand display" href="/" aria-label={site.name}>
+      <Leaf />
+      {path !== '/' && <span>{site.name}</span>}
+    </a>
 
     <nav aria-label="Main">
       <ul>
@@ -83,9 +88,13 @@ function isActive(href: string) {
   }
 
   .brand {
-    font-weight: var(--weight-semibold);
-    font-size: var(--text-base);
-    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    letter-spacing: -0.01em;
     color: var(--text);
     text-decoration: none;
     margin-right: auto;
