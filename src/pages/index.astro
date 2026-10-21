@@ -89,8 +89,8 @@ const hasPhoto = existsSync(join(process.cwd(), 'public', site.photo));
       <div class="prose">
         <p>I am an undergraduate researcher majoring in Statistics at Seoul National University.</p>
         <p>
-          My research interests lie in <strong class="key">risk control</strong> and{' '}
-          <strong class="key">robust decision-making</strong>, grounded in statistical theory. I am
+          My research interests lie in{' '}
+          <strong class="key">risk control and robust decision-making, grounded in statistical theory</strong>. I am
           particularly interested in understanding and managing uncertainty in machine learning
           systems to enable reliable decisions, with the broader goal of building trustworthy AI.
         </p>
@@ -405,6 +405,10 @@ const hasPhoto = existsSync(join(process.cwd(), 'public', site.photo));
   .key {
     color: var(--accent);
     font-weight: var(--weight-semibold);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.22em;
   }
 
   .hero :global(.bio .prose) {
