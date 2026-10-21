@@ -32,7 +32,7 @@ const publications = [
   },
   {
     title: 'From Drift to Coherence: Stabilizing Beliefs of LLMs',
-    authors: ['Songeun Kim', 'Seungyoo Lee', 'Edwin Fong', 'Hyungi Lee', 'Juho Lee'],
+    authors: ['SongEun Kim', 'Seungyoo Lee', 'Edwin Fong', 'Hyungi Lee', 'Juho Lee'],
     me: 0,
     venue: 'ICML 2026',
     link: { label: 'arXiv', href: 'https://arxiv.org/abs/2606.17832' },
@@ -89,10 +89,11 @@ const hasPhoto = existsSync(join(process.cwd(), 'public', site.photo));
       <div class="prose">
         <p>I am an undergraduate researcher majoring in Statistics at Seoul National University.</p>
         <p>
-          My research interests lie in{' '}
-          <strong class="key">risk control and robust decision-making, grounded in statistical theory</strong>. I am
-          particularly interested in understanding and managing uncertainty in machine learning
-          systems to enable reliable decisions, with the broader goal of building trustworthy AI.
+          My research interests center on{' '}
+          <strong class="key">robust decision-making under uncertainty, grounded in statistical theory</strong>.
+          I am particularly interested in understanding uncertainty in machine learning systems and
+          developing principled methods to control risk and enable reliable decisions, with the
+          broader goal of building trustworthy AI.
         </p>
       </div>
     </Reveal>
@@ -133,7 +134,7 @@ const hasPhoto = existsSync(join(process.cwd(), 'public', site.photo));
                         ))}
                       </span>{' '}
                       <button type="button" class="authors-toggle" aria-expanded="false">
-                        all {pub.authors.length} authors
+                        see all
                       </button>
                     </>
                   ) : (
