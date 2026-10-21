@@ -1,0 +1,131 @@
+---
+import type { ShelfItem } from '../lib/library';
+import { site } from '../site.config';
+
+/**
+ * A book shown as an actual book: front cover in the book's colour, a
+ * darker spine on the left and a block of page edges on the right. Turns
+ * slightly toward the reader on hover.
+ */
+interface Props {
+  item: ShelfItem;
+}
+
+const { item } = Astro.props;
+const d = item.book.data;
+const Tag = item.href ? 'a' : 'div';
+---
+
+<Tag class="book3d" href={item.href ?? undefined} aria-label={d.title} style={`--color: ${d.color};`}>
+  <span class="pages" aria-hidden="true"></span>
+  <span class="cover" aria-hidden="true">
+    <span class="spine"></span>
+    <span class="rule"></span>
+    <span class="title">{d.title}</span>
+    {d.subtitle && <span class="sub">{d.subtitle}</span>}
+    <span class="author">{site.name}</span>
+  </span>
+</Tag>
+
+<style>
+  .book3d {
+    position: relative;
+    display: block;
+    width: 184px;
+    aspect-ratio: 3 / 4.1;
+    margin-right: 10px;
+    text-decoration: none;
+    transform: perspective(1000px) rotateY(-16deg);
+    transform-origin: left center;
+    transition: transform 0.45s var(--ease);
+  }
+
+  .book3d:hover,
+  .book3d:focus-visible {
+    transform: perspective(1000px) rotateY(-4deg) translateY(-3px);
+  }
+
+  /* Page block peeking out on the right and bottom. */
+  .pages {
+    position: absolute;
+    top: 4px;
+    right: -9px;
+    bottom: -3px;
+    left: 8px;
+    border-radius: 2px 4px 4px 2px;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 2px, rgb(0 0 0 / 0.06) 2px 3px),
+      #f4f1e8;
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.14);
+  }
+
+  :global(:root[data-theme='dark']) .pages {
+    background:
+      repeating-linear-gradient(90deg, transparent 0 2px, rgb(0 0 0 / 0.18) 2px 3px),
+      #cfcabd;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .pages {
+      background:
+        repeating-linear-gradient(90deg, transparent 0 2px, rgb(0 0 0 / 0.18) 2px 3px),
+        #cfcabd;
+    }
+  }
+
+  .cover {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-6) var(--space-4) var(--space-4) calc(var(--space-4) + 14px);
+    background: var(--color);
+    border-radius: 2px 5px 5px 2px;
+    overflow: hidden;
+  }
+
+  .spine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 14px;
+    background: linear-gradient(90deg, rgb(0 0 0 / 0.28), rgb(0 0 0 / 0.08) 70%, rgb(255 255 255 / 0.12));
+  }
+
+  .rule {
+    width: 28px;
+    height: 3px;
+    margin-bottom: var(--space-4);
+    background: rgb(255 255 255 / 0.55);
+  }
+
+  .title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+    letter-spacing: -0.01em;
+    color: #fff;
+  }
+
+  .sub {
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+    color: rgb(255 255 255 / 0.78);
+  }
+
+  .author {
+    margin-top: auto;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.7);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .book3d {
+      transition: none;
+    }
+  }
+</style>

@@ -10,6 +10,11 @@ export default defineConfig({
 
   integrations: [mdx()],
 
+  // About now lives on the home page; keep old links working.
+  redirects: {
+    '/about': '/',
+  },
+
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex],

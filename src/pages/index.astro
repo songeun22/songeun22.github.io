@@ -4,13 +4,31 @@ import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Reveal from '../components/Reveal.astro';
 import SocialLinks from '../components/SocialLinks.astro';
-import BookSpine from '../components/BookSpine.astro';
+import BookCover from '../components/BookCover.astro';
 import { site } from '../site.config';
-import { getShelf } from '../lib/library';
+import { getShelf, getBookOutline } from '../lib/library';
 
-const shelf = await getShelf();
+// Home doubles as the About page: who I am, then publications, experience,
+// and what I'm writing.
 
-// The home page teases; it doesn't dump. Deliberately partial.
+const timeline = (await getCollection('timeline')).sort((a, b) => b.data.start - a.data.start);
+
+const kindLabel: Record<string, string> = {
+  education: 'Education',
+  research: 'Research',
+  work: 'Work',
+};
+
+const books = await Promise.all(
+  (await getShelf())
+    .filter((item) => !item.planned)
+    .map(async (item) => ({
+      item,
+      outline: (await getBookOutline(item.book.id)).map((n) => n.page.data.title),
+    })),
+);
+
+// The home page teases the gallery; it doesn't dump it.
 const PREVIEW_COUNT = 6;
 const gallery = (await getCollection('gallery')).slice(0, PREVIEW_COUNT);
 
@@ -22,60 +40,131 @@ const files = import.meta.glob<{ default: ImageMetadata }>(
 const previews = gallery
   .map((item) => ({ ...item.data, src: files[`/src/images/gallery/${item.data.image}`]?.default }))
   .filter((p) => p.src);
+
+const fmtDate = (d?: Date) =>
+  d ? d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }) : null;
 ---
 
 <Base>
-  <!-- Hero -->
+  <!-- Profile + bio -->
   <section class="hero">
-    <Reveal>
-      <img class="avatar" src={site.avatar} alt="" width="128" height="128" />
-    </Reveal>
-
-    <Reveal delay={80}>
+    <Reveal class="profile">
+      <img class="avatar" src={site.avatar} alt="" width="160" height="160" />
       <h1>{site.name}</h1>
       <p class="tagline">{site.tagline}</p>
-    </Reveal>
-
-    <Reveal delay={160}>
-      {/* Written out rather than pulled from config so the break lands
-          between the sentences, and never inside the name. */}
       <p class="intro">
-        Hello, I'm <span class="nowrap">Songeun Kim (김송은)</span> — or you can just call me Olivia.<br
-        />
+        Hello, I'm <span class="nowrap">Songeun Kim (김송은)</span> — or you can just call me Olivia.
         Welcome to my personal blog!
       </p>
-    </Reveal>
-
-    <Reveal delay={240}>
-      <div class="cta">
-        <a class="btn primary" href="/library">Read the Library</a>
-        <a class="btn" href="/about">About me</a>
-      </div>
-
       <SocialLinks />
+      <div class="cta">
+        <a class="btn primary" href="/cv">CV</a>
+        <a class="btn" href="/library">Library</a>
+      </div>
     </Reveal>
 
-    <div class="scroll-cue" aria-hidden="true">
-      <span></span>
-    </div>
+    <Reveal delay={100} class="bio">
+      <div class="prose">
+        <p>
+          I am a student ML researcher in South Korea, currently pursuing a Bachelor's degree in
+          Statistics at Seoul National University.
+        </p>
+        <p>
+          My research interest lies in probabilistic machine learning broadly, and more specifically
+          in decision making and uncertainty quantification. I find these fields compelling because
+          rigorous uncertainty quantification provides a mathematical language for models to express
+          their limits. By transforming raw neural network heuristics into well-calibrated confidence
+          measures, we can build a reliable bridge where domain experts, whether in biology (e.g.,
+          drug discovery, protein design), physics, or finance, and automated systems can
+          collaborate safely in high-stakes environments.
+        </p>
+      </div>
+    </Reveal>
   </section>
 
-  <!-- Library teaser -->
+  <!-- Publications -->
+  <section class="block">
+    <Reveal>
+      <div class="block-head"><h2>Publications</h2></div>
+    </Reveal>
+
+    <ol class="pub-list">
+      <li>
+        <Reveal>
+          <p class="pub-authors"><strong>Songeun Kim</strong>, Seungyoo Lee, Edwin Fong, Hyungi Lee, Juho Lee</p>
+          <p class="pub-title">From Drift to Coherence: Stabilizing Beliefs of LLMs</p>
+          <p class="pub-meta">ICML 2026 · <a href="https://arxiv.org/abs/2606.17832">arXiv</a></p>
+        </Reveal>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Experience -->
+  <section class="block">
+    <Reveal>
+      <div class="block-head"><h2>Experience</h2></div>
+    </Reveal>
+
+    <ol class="timeline">
+      {
+        timeline.map((entry, i) => (
+          <li>
+            <Reveal delay={i * 90}>
+              <div class="entry">
+                <div class="marker" data-kind={entry.data.kind}>
+                  <span class="dot" />
+                </div>
+                <div class="body">
+                  <p class="period">{entry.data.period}</p>
+                  <h3>{entry.data.title}</h3>
+                  <p class="org">{entry.data.org}</p>
+                  {entry.data.description && <p class="desc">{entry.data.description}</p>}
+                  <span class="kind">{kindLabel[entry.data.kind]}</span>
+                </div>
+              </div>
+            </Reveal>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <!-- Library -->
   <section class="block">
     <Reveal>
       <div class="block-head">
-        <h2>From the Library</h2>
-        <a class="more" href="/library">See all →</a>
+        <h2>Library</h2>
+        <a class="more" href="/library">See the shelf →</a>
       </div>
     </Reveal>
 
-    <Reveal>
-      <ul class="shelf">
-        {shelf.map((item) => <BookSpine item={item} height={240} />)}
-      </ul>
-      <div class="plank"></div>
-      <p class="hint">Hover a book to open its cover. Grey ones aren't written yet.</p>
-    </Reveal>
+    <ul class="books">
+      {
+        books.map(({ item, outline }) => (
+          <li>
+            <Reveal class="book-row">
+              <div class="book-text">
+                <h3>
+                  {item.href ? <a href={item.href}>{item.book.data.title}</a> : item.book.data.title}
+                </h3>
+                {item.book.data.subtitle && <p class="book-sub">{item.book.data.subtitle}</p>}
+                {item.book.data.description && <p class="book-desc">{item.book.data.description}</p>}
+                {outline.length > 0 && (
+                  <ol class="book-outline">
+                    {outline.map((t) => <li>{t}</li>)}
+                  </ol>
+                )}
+                <p class="book-meta">
+                  {item.chapters.length} {item.chapters.length === 1 ? 'page' : 'pages'}
+                  {fmtDate(item.book.data.updated) && <> · updated {fmtDate(item.book.data.updated)}</>}
+                </p>
+              </div>
+              <BookCover item={item} />
+            </Reveal>
+          </li>
+        ))
+      }
+    </ul>
   </section>
 
   <!-- Gallery teaser -->
@@ -105,54 +194,57 @@ const previews = gallery
         ))
       }
     </div>
-
-    <Reveal>
-      <a class="btn see-more" href="/gallery">See more</a>
-    </Reveal>
   </section>
 </Base>
 
 <style>
-  /* ---- Hero ---- */
+  /* Home reads narrower than the rest of the site: 0.8x the page width.
+     Set on the root so the nav lines up with the content too. This style
+     only ships with the home page. */
+  :global(html:root) {
+    --page-max: 960px;
+  }
+
+  /* ---- Profile + bio ---- */
 
   .hero {
-    position: relative;
-    min-height: calc(100dvh - var(--nav-h));
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: var(--space-16);
+    align-items: start;
+    padding-block: var(--space-16) var(--space-12);
+  }
+
+  .hero :global(.profile) {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: var(--space-4);
-    padding-block: var(--space-16);
+    align-items: flex-start;
+    gap: var(--space-3);
   }
 
   .avatar {
-    width: 166px;
-    height: 166px;
+    width: 160px;
+    height: 160px;
+    margin-bottom: var(--space-2);
     border-radius: 50%;
     background: var(--bg-subtle);
     border: 1px solid var(--border);
   }
 
   .hero h1 {
-    font-size: var(--text-4xl);
-    letter-spacing: -0.035em;
+    font-size: var(--text-3xl);
+    letter-spacing: -0.03em;
   }
 
   .tagline {
-    margin-top: var(--space-2);
+    margin-top: calc(-1 * var(--space-2));
     font-size: var(--text-lg);
     color: var(--text-faint);
   }
 
   .intro {
-    /* Wide enough to hold the first sentence on one line, so the authored
-       <br> is the only break on a normal screen. */
-    max-width: 68ch;
     font-family: var(--font-serif);
-    font-size: var(--text-lg);
-    line-height: var(--leading-normal);
+    line-height: var(--leading-snug);
     color: var(--text-muted);
   }
 
@@ -160,17 +252,21 @@ const previews = gallery
     white-space: nowrap;
   }
 
+  .hero :global(.socials) {
+    justify-content: flex-start;
+    margin-top: var(--space-2);
+  }
+
   .cta {
     display: flex;
     gap: var(--space-3);
-    justify-content: center;
     flex-wrap: wrap;
-    margin-top: var(--space-4);
+    margin-top: var(--space-2);
   }
 
   .btn {
     display: inline-block;
-    padding: var(--space-3) var(--space-6);
+    padding: var(--space-2) var(--space-6);
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
     color: var(--text);
@@ -197,43 +293,18 @@ const previews = gallery
     color: #fff;
   }
 
-  .hero :global(.socials) {
-    margin-top: var(--space-6);
+  .hero :global(.bio) {
+    padding-top: var(--space-4);
   }
 
-  .scroll-cue {
-    position: absolute;
-    bottom: var(--space-8);
-    left: 50%;
-    transform: translateX(-50%);
-    width: 1px;
-    height: 40px;
-    background: var(--border-strong);
-    overflow: hidden;
+  .hero :global(.bio .prose) {
+    max-width: none;
   }
 
-  .scroll-cue span {
-    display: block;
-    width: 100%;
-    height: 40%;
-    background: var(--accent);
-    animation: trickle 2.2s var(--ease) infinite;
-  }
-
-  @keyframes trickle {
-    0% {
-      transform: translateY(-100%);
-    }
-    60%,
-    100% {
-      transform: translateY(250%);
-    }
-  }
-
-  /* ---- Blocks ---- */
+  /* ---- Sections ---- */
 
   .block {
-    padding-block: var(--space-16);
+    padding-bottom: var(--space-16);
   }
 
   .block-head {
@@ -257,29 +328,202 @@ const previews = gallery
     white-space: nowrap;
   }
 
-  /* ---- Shelf ---- */
+  /* ---- Publications ---- */
 
-  .shelf {
-    display: flex;
-    align-items: flex-end;
-    gap: 5px;
+  .pub-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    min-height: 240px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    max-width: 760px;
   }
 
-  /* A plain rule, not a plank with a shadow. */
-  .plank {
-    height: 3px;
-    background: var(--border-strong);
+  .pub-list li + li {
+    margin-top: var(--space-6);
   }
 
-  .hint {
-    margin-top: var(--space-4);
+  .pub-authors {
     font-size: var(--text-sm);
+  }
+
+  .pub-title {
+    margin-top: var(--space-1);
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+  }
+
+  .pub-meta {
+    margin-top: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--text-faint);
+  }
+
+  /* ---- Experience ---- */
+
+  .timeline {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-width: 760px;
+  }
+
+  .entry {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: var(--space-6);
+  }
+
+  /* The rail is drawn by the marker column, so it never orphans. */
+  .marker {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+
+  .marker::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: -1px;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .timeline li:last-child .marker::before {
+    bottom: auto;
+    height: 16px;
+  }
+
+  .dot {
+    position: relative;
+    z-index: 1;
+    width: 11px;
+    height: 11px;
+    margin-top: 10px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--border-strong);
+  }
+
+  .marker[data-kind='research'] .dot {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+
+  .marker[data-kind='education'] .dot {
+    border-color: var(--accent);
+  }
+
+  .marker[data-kind='work'] .dot {
+    border-color: color-mix(in srgb, var(--accent) 55%, white);
+    background: color-mix(in srgb, var(--accent) 35%, white);
+  }
+
+  .body {
+    padding-bottom: var(--space-8);
+  }
+
+  .timeline li:last-child .body {
+    padding-bottom: 0;
+  }
+
+  .period {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+  }
+
+  .body h3 {
+    margin-top: var(--space-1);
+    font-size: var(--text-lg);
+  }
+
+  .org {
+    margin-top: var(--space-1);
+    font-family: var(--font-serif);
+    color: var(--text-muted);
+  }
+
+  .desc {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--text-faint);
+    max-width: 60ch;
+  }
+
+  .kind {
+    display: inline-block;
+    margin-top: var(--space-2);
+    padding: 2px var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+
+  /* ---- Library ---- */
+
+  .books {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .books > li + li {
+    margin-top: var(--space-12);
+    padding-top: var(--space-12);
+    border-top: 1px solid var(--border);
+  }
+
+  .books :global(.book-row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-12);
+    align-items: center;
+  }
+
+  .book-text h3 {
+    font-size: var(--text-xl);
+  }
+
+  .book-text h3 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .book-text h3 a:hover {
+    color: var(--accent);
+  }
+
+  .book-sub {
+    margin-top: var(--space-1);
+    color: var(--text-faint);
+  }
+
+  .book-desc {
+    margin-top: var(--space-4);
+    max-width: 62ch;
+    font-family: var(--font-serif);
+    line-height: var(--leading-normal);
+    color: var(--text-muted);
+  }
+
+  .book-outline {
+    margin: var(--space-4) 0 0;
+    padding-left: 1.4em;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  .book-outline li + li {
+    margin-top: 2px;
+  }
+
+  .book-meta {
+    margin-top: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
     color: var(--text-faint);
   }
 
@@ -332,15 +576,21 @@ const previews = gallery
     transform: none;
   }
 
-  .see-more {
-    display: block;
-    width: fit-content;
-    margin: var(--space-8) auto 0;
+  @media (max-width: 860px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: var(--space-8);
+      padding-block: var(--space-12) var(--space-8);
+    }
   }
 
   @media (max-width: 640px) {
-    .hero h1 {
-      font-size: var(--text-3xl);
+    .books :global(.book-row) {
+      grid-template-columns: 1fr;
+      gap: var(--space-8);
+    }
+    .books :global(.book3d) {
+      order: -1;
     }
     .mosaic {
       grid-template-columns: repeat(2, 1fr);
